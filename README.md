@@ -13,7 +13,7 @@ Optimal cycle representatives
     cargo build --bin demo_rational 
     ./target/debug/demo_rational
     ```
-Alternatively, you can do
+* Alternatively, you can do
 
     ```
     cd path/to/crate
