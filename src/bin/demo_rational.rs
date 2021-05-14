@@ -3,6 +3,7 @@ use exhact::cubical::{Cube, CubicalComplex};
 use exhact::chx::{ChainComplex, factor_chain_complex, ChxTransformKind};
 use exhact::clique::Simplex;
 use num::rational::Ratio;
+
 use std;
 
 
@@ -22,8 +23,8 @@ fn main() {
     // ----------------------------------------------------------------------------------
     let ringmetadata = exhact::matrix::RingMetadata{
     	ringspec: RingSpec::Rational,
-    	identity_additive: Ratio::new(0, 1),
-    	identity_multiplicative: Ratio::new(1, 1)
+    	identity_additive: Ratio::from_integer(0),
+    	identity_multiplicative: Ratio::from_integer(1),
     };
     
 
@@ -105,10 +106,10 @@ fn main() {
     }
     
     // check to ensure that the output is correct:
-    let mut correct_val : Vec< (Simplex<i64>, i16) >  = 
-                      vec![ (Simplex{ filvalue: 1, vertices: vec![0, 1] }, -1),
-                            (Simplex{ filvalue: 2, vertices: vec![0, 2] }, -1),
-                            (Simplex{ filvalue: 1, vertices: vec![0, 3] }, -1) ];
+    let mut correct_val : Vec< (Simplex<i64>, Ratio<i16>) >  = 
+                      vec![ (Simplex{ filvalue: 1, vertices: vec![0, 1] }, Ratio::from_integer(-1) ),
+                            (Simplex{ filvalue: 2, vertices: vec![0, 2] }, Ratio::from_integer(-1) ),
+                            (Simplex{ filvalue: 1, vertices: vec![0, 3] }, Ratio::from_integer(-1) ) ];
     
     let major_field2 = D.maj_itr( &simplex_d0 ); // this re-creates the iterator
     std::assert_eq!( major_field2.eq(correct_val.iter().map( |x| x.clone() ) ), true);
@@ -134,9 +135,9 @@ fn main() {
     }
 
     // check to ensure that the output is correct:
-    let mut correct_val : Vec< (Simplex<i64>, i16) >  = 
-                      vec![  (Simplex{ filvalue: 0, vertices: vec![1] },  1),
-                             (Simplex{ filvalue: 0, vertices: vec![0] }, -1)  ];
+    let mut correct_val : Vec< (Simplex<i64>, Ratio<i16>) >  = 
+                      vec![  (Simplex{ filvalue: 0, vertices: vec![1] }, Ratio::from_integer( 1) ),
+                             (Simplex{ filvalue: 0, vertices: vec![0] }, Ratio::from_integer(-1) )  ];
     
     let minor_field2 = D.min_itr( &simplex_d1 ); // this re-creates the iterator
     std::assert_eq!( minor_field2.eq(correct_val.iter().map( |x| x.clone() ) ), true);
@@ -183,8 +184,8 @@ fn main() {
 
     // check to ensure that the output is correct:
         // write a vector with correct values
-    let mut correct_val : Vec< (Simplex<i64>, i16) >  = 
-                      vec![  (Simplex{ filvalue: 1, vertices: vec![0, 1] },  1)  ];
+    let mut correct_val : Vec< (Simplex<i64>, Ratio<i16>) >  = 
+                      vec![  (Simplex{ filvalue: 1, vertices: vec![0, 1] }, Ratio::from_integer(1) )  ];
     
         // convert the hashmap to an iterator  
         
