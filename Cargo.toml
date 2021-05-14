@@ -1,0 +1,13 @@
+[package]
+name = "optimal_representatives"
+version = "0.1.0"
+authors = ["Lu Li <lli1@macalester.edu>", "Gregory <greg.henselman@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ndarray = "0.15.1"
+exhact = {path = "/Users/gh10/a/c/pr/xh/r/exhact_rust_git"}
+num = "0.4.0"
+ordered-float = "2.2.0"
