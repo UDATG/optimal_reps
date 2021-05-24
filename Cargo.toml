@@ -7,7 +7,13 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ndarray = "0.15.1"
-exhact = {path = "/Users/gh10/a/c/pr/xh/r/exhact_rust_git"}
+ndarray = {version = "0.15.1", features = ["rayon"] }
+exhact = {path = "/Users/luli/Developer/exhact_rust-devel_haibin_comments"}
 num = "0.4.0"
 ordered-float = "2.2.0"
+gurobi = "0.3.4"
+good_lp = "1.1.3"
+float_eq = "0.6.0"
+numopt = "0.2.1"
+coin_cbc = "0.1.5"
+sprs = "0.10.0"
