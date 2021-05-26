@@ -16,7 +16,7 @@ use std::hash::Hash;
 
 use ordered_float::OrderedFloat;
 
-type Coefficient = Ratio<i32>;
+type Coefficient = Ratio<i16>;
 
 
 
@@ -100,8 +100,10 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         let D =  chx.get_smoracle(exhact::matrix::MajorDimension::Row,
                               exhact::chx::ChxTransformKind::Boundary);
         // create hashmaps to store keys to indices 
-        let mut maj_2_index: HashMap<exhact::clique::Simplex<OrderedFloat<f64>>, usize> = HashMap::new();       
-        let mut min_2_index: HashMap<exhact::clique::Simplex<OrderedFloat<f64>>, usize> = HashMap::new();   
+        // let mut maj_2_index: HashMap<exhact::clique::Simplex<OrderedFloat<f64>>, usize> = HashMap::new();       
+        // let mut min_2_index: HashMap<exhact::clique::Simplex<OrderedFloat<f64>>, usize> = HashMap::new();   
+        let mut maj_2_index: HashMap<MatrixIndexKey, usize> = HashMap::new();       
+        let mut min_2_index: HashMap<MatrixIndexKey, usize> = HashMap::new();   
         // initialize indices to be 0   
         let mut maj_index:usize = 0;
         let mut min_index:usize = 0;
@@ -157,8 +159,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
                 }
             }
             ind_ptr.push(counter);
-        }
-            // Set objective sense.
+        // Set objective sense.
         m.set_obj_sense(Sense::Minimize);
 
         //min_2_index.get(&death): index corresponding to tau
@@ -166,19 +167,22 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         m.set_col_lower(cols[*min_2_index.get(&death).unwrap()],1.0);
         m.set_col_upper(cols[*min_2_index.get(&death).unwrap()+size],0.0);
         m.set_col_lower(cols[*min_2_index.get(&death).unwrap()+size],0.0);
-
-    
-        // Solve the problem. Returns the solution
-        let sol = m.solve();
-
-        let mut v= Vec::with_capacity(size);
-        for i in 0..size{
-            v.push(sol.col(cols[i])-sol.col(cols[i+size]));
         }
-
-        return v;
+ 
 
     }
+
+     // Solve the problem. Returns the solution
+    let sol = m.solve();
+
+    let mut v= Vec::with_capacity(size);
+    for i in 0..size{
+        v.push(sol.col(cols[i])-sol.col(cols[i+size]));
+    }
+
+    return v;
+
+    
 }
 
 
