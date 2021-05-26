@@ -32,14 +32,15 @@ fn ordered_floats_nested( v: Vec< Vec< f64 > > ) -> Vec< Vec< OrderedFloat<f64> 
 }
 
 
-fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
+fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix,dim>
 (
     is_pos:bool, // optimize over the positive domain
     is_int:bool,
+    dim:usize,
     factored_complex: FactoredComplexBlockCsm<'a, MatrixIndexKey, Coefficient, Filtration, OriginalChx>,
     chx:  ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matrix=Matrix>)-> Vec<f64>
     where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matrix=Matrix>,
-            MatrixIndexKey: PartialEq+ Eq + Clone + Hash,
+            MatrixIndexKey: PartialEq+ Eq + Clone + Hash + std::cmp::PartialOrd,
             Matrix: SmOracle<MatrixIndexKey, MatrixIndexKey, Coefficient>
 
 
@@ -58,7 +59,8 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
     //                     vec![1.,  2.,  1.,  0.]  ];
     // let dismat = ordered_floats_nested(dismat);
 
-    for i in 1..(1+1){
+    //for i in 1..(1+1){
+    let i = dim;
         let mut m = Model::default();
         m.set_parameter("log", "0"); // turn off logging 
         // a list of tuples (birth simplex, death simplex)
@@ -121,7 +123,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         for edge in Fn{ // for each row 
 
             let row = m.add_row();
-            if edge == *birth {
+            if edge == birth {
                 if is_pos{
                     m.set_row_lower(row,f64::EPSILON);
                 }
@@ -144,7 +146,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
                 let tri = minor_field.0;
                 // entry value
                 let data = minor_field.1;
-                if &tri <=death && &tri>= birth{
+                if tri <=death && tri>= birth{
                     
                     if !min_2_index.contains_key(&tri) {
                         min_2_index.insert(tri.clone(), min_index);
@@ -170,7 +172,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         }
  
 
-    }
+    //}
 
      // Solve the problem. Returns the solution
     let sol = m.solve();
@@ -227,7 +229,7 @@ fn main() {
     
     let factored_complex = exhact::chx::factor_chain_complex(&chx, dim+1);
 
-    let v = tri_opt(true,true,factored_complex, chx);
+    let v = tri_opt(true,true,0,factored_complex, chx);
 
 
 //     let mut barcode = factored_complex.simplex_barcode(1);
