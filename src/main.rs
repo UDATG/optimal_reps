@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::hash::Hash;
+use optimal_representatives::simplex_bar::{simplex_barcode};
 
 // must add the following line to dependencies under Cargo.toml:
 //      ordered-float = "2.0"
@@ -38,13 +39,13 @@ fn tri_opt< MatrixIndexKey, Filtration, OriginalChx, Matrix>
             Filtration: PartialOrd + Clone,
     {
         let chx = &factored_complex.original_complex;
-        let mut barcode = factored_complex.simplex_barcode(1);
+        let mut barcode = simplex_barcode( &factored_complex, 1 );
         barcode.sort();
         let i = dim;
         let mut m = Model::default();
         m.set_parameter("log", "0"); // turn off logging 
         // a list of tuples (birth simplex, death simplex)
-        let simplex_bar = factored_complex.simplex_barcode(i);
+        let simplex_bar = simplex_barcode( &factored_complex, i );
         let mut sols: Vec<Vec<f64>> = Vec::with_capacity(simplex_bar.len());
         for j in 0..simplex_bar.len(){
             println!("{}", j);
