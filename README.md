@@ -3,7 +3,9 @@ Optimal cycle representatives
 
 ## Installing CBC
 `brew tap coin-or-tools/coinorbrew`
+
 `install coin-or-tools/coinor/cbc`
+
 https://github.com/coin-or/Cbc
 
 ## Examples
