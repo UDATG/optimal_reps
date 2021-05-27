@@ -197,6 +197,9 @@ fn main() {
     let v = tri_opt(false, true, 1,factored_complex);
     println!("here5");
 
+
+    
+
 //     let mut barcode = factored_complex.simplex_barcode(1);
 //     barcode.sort();
 //  // println!("Barcode contains {} bars.", barcode.len());
