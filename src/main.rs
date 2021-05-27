@@ -27,35 +27,27 @@ fn ordered_floats_nested(v: Vec<Vec<f64>>) -> Vec< Vec< OrderedFloat<f64> > > {
     return v.into_iter().map( ordered_floats ).collect();
 }
 
-fn tri_opt< MatrixIndexKey, Filtration, OriginalChx, Matrix>
+fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
 (
     is_pos:bool, // optimize over the positive domain
     is_int:bool,
     dim:usize,
-    factored_complex: FactoredComplexBlockCsm< MatrixIndexKey, Coefficient, Filtration, OriginalChx>)-> Vec<Vec<f64>>
+    factored_complex: &FactoredComplexBlockCsm<'a, MatrixIndexKey, Coefficient, Filtration, OriginalChx>,
+    birth: &MatrixIndexKey,
+    death: &MatrixIndexKey)-> Vec<f64>
     where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matrix=Matrix>,
             MatrixIndexKey: PartialEq+ Eq + Clone + Hash + std::cmp::PartialOrd + Ord + std::fmt::Debug,
             Matrix: SmOracle<MatrixIndexKey, MatrixIndexKey, Coefficient>,
             Filtration: PartialOrd + Clone,
     {
         let chx = &factored_complex.original_complex;
-        let mut barcode = simplex_barcode( &factored_complex, 1 );
-        barcode.sort();
         let i = dim;
         let mut m = Model::default();
         m.set_parameter("log", "0"); // turn off logging 
         // a list of tuples (birth simplex, death simplex)
-        let simplex_bar = simplex_barcode( &factored_complex, i );
-        let mut sols: Vec<Vec<f64>> = Vec::with_capacity(simplex_bar.len());
-        for j in 0..simplex_bar.len(){
-            println!("{}", j);
-            let birth = &simplex_bar[j].0;
-            let death = &simplex_bar[j].1;
-            println!("{:?}", birth);
-            println!("{:?}", death);
             // loop over Sn+1
-            let Fn_1 = chx.keys_unordered_itr(i + 1).filter(|s| s <= &death && s >= &birth );
-            let size = Fn_1.count();
+            let good_triangles = chx.keys_unordered_itr(i + 1).filter(|s| s <= &death && s >= &birth );
+            let size = good_triangles.count();
             // loop over Sn
             let Fn = chx.keys_unordered_itr(i).filter(|s| s <= &death && s >= &birth);
             let obj_coef = vec![1.; 2 * size]; // c^T // 1 vector with length |Fn|
@@ -79,7 +71,7 @@ fn tri_opt< MatrixIndexKey, Filtration, OriginalChx, Matrix>
             let maj_fields = D.min_itr(&death);
             for item in maj_fields{
                 println!("{:?}",item);
-                println!("{}", &item.0 >= birth && &item.0 <= death);
+                println!("{}", &item.0 >= &birth && &item.0 <= &death);
             }
             // create hashmaps to store keys to indices 
             let mut maj_2_index: HashMap<MatrixIndexKey, usize> = HashMap::new();       
@@ -124,7 +116,7 @@ fn tri_opt< MatrixIndexKey, Filtration, OriginalChx, Matrix>
                         println!("the edge that's contained in tau");
                         println!("{:?}", edge);
                     }
-                    if &tri <= death && &tri >= birth{
+                    if &tri <= &death && &tri >= &birth{
                         // println!("{:?}", tri);
                         
                         if !min_2_index.contains_key(&tri) {
@@ -153,9 +145,8 @@ fn tri_opt< MatrixIndexKey, Filtration, OriginalChx, Matrix>
             for i in 0..size{
                 v.push(sol.col(cols[i]) - sol.col(cols[i + size]));
             }
-            sols.push(v);
-        }
-        return sols;
+
+        return v;
 }
 fn main() {    
     // read file
@@ -195,11 +186,20 @@ fn main() {
     println!("here3");
     let factored_complex = exhact::chx::factor_chain_complex(&chx, dim+1);
     println!("here4");
-    let v = tri_opt(false, true, 1,factored_complex);
+    let mut simplex_bar = simplex_barcode( &factored_complex, 1 );
+    let mut sols: Vec<Vec<f64>> = Vec::with_capacity(simplex_bar.len());
+
+    for j in 0..simplex_bar.len(){
+        println!("{}", j);
+        let birth = &simplex_bar[j].0;
+        let death = &simplex_bar[j].1;
+        let v = tri_opt(false, true, 1, &factored_complex, birth, death);
+        sols.push(v);
+    }
+    
     println!("here5");
 
 
-    
 
 //     let mut barcode = factored_complex.simplex_barcode(1);
 //     barcode.sort();
