@@ -51,7 +51,6 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
             Matrix: SmOracle<MatrixIndexKey, MatrixIndexKey, Coefficient>,
             Filtration: PartialOrd + Clone,
     {
-        
         let chx = &factored_complex.original_complex;
         let i = dim;
         let mut m = Model::default();
@@ -106,6 +105,8 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
             // create hashmaps to store keys to indices 
             let mut maj_2_index: HashMap<MatrixIndexKey, usize> = HashMap::new();       
             let mut min_2_index: HashMap<MatrixIndexKey, usize> = HashMap::new();   
+            let mut index_2_maj: HashMap<usize, MatrixIndexKey> = HashMap::new();       
+            let mut index_2_min: HashMap<usize, MatrixIndexKey> = HashMap::new();  
             // initialize indices to be 0   
             let mut maj_index:usize = 0;
             let mut min_index:usize = 0;
@@ -115,7 +116,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
             let mut col_ind = Vec::new();
             let mut nz_val : Vec<f64> = Vec::new();
             let mut counter = 1;
-            for edge in Fn{ // for each row 
+            for edge in Fn { // for each row 
                 // println!("{}", counter);
                 let row = m.add_row();
                 if &edge == birth {
@@ -127,11 +128,14 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
                     }
                 }
                 else{
+                    println!("0000");
+                    println!("{:?}", edge);
                     m.set_row_upper(row, 0.0);
                     m.set_row_lower(row, 0.0);
                 }
                 if !maj_2_index.contains_key(&edge) {
-                    maj_2_index.insert(edge.clone(), maj_index); 
+                    maj_2_index.insert(edge.clone(), maj_index.clone());
+                    index_2_maj.insert(maj_index.clone(), edge.clone());
                     maj_index = maj_index + 1;
                 }
                 let minor_fields = D.maj_itr(&edge);
@@ -141,31 +145,32 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
                     // entry value
                     let data = minor_field.1;
                     
-                    if &tri == death{
-                        println!("tau");
-                        println!("{:?}", min_2_index.contains_key(&tri));
-                        println!("the edge that's contained in tau");
-                        println!("{:?}", edge);
-                    }
+                    // if &tri == death{
+                    //     println!("tau");
+                    //     println!("{:?}", min_2_index.contains_key(&tri));
+                    //     println!("the edge that's contained in tau");
+                    //     println!("{:?}", edge);
+                    // }
                     if &tri <= &death && &tri >= &birth{                        
                         if !min_2_index.contains_key(&tri) {
-                            min_2_index.insert(tri.clone(), min_index);
+                            min_2_index.insert(tri.clone(), min_index.clone());
+                            index_2_min.insert(min_index.clone(), tri.clone());
                             min_index = min_index + 1;
                         }
                         col_ind.push(*min_2_index.get(&tri).unwrap());
                         nz_val.push((data.numer()/data.denom()).into());
                         counter = counter+1;
-                        m.set_weight(row,cols[*min_2_index.get(&tri).unwrap()] , (data.numer()/data.denom()).into());
-                        m.set_weight(row,cols[*min_2_index.get(&tri).unwrap() + size] , (-data.numer()/data.denom()).into());
+                        m.set_weight(row, cols[*min_2_index.get(&tri).unwrap()], (data.numer()/data.denom()).into());
+                        m.set_weight(row, cols[*min_2_index.get(&tri).unwrap() + size], (-data.numer()/data.denom()).into());
                     }
                     
                 }
                 ind_ptr.push(counter);
             }
-            let a = CsMat::new((3, 3),
-                       vec![0, 2, 4, 5],
-                       vec![0, 1, 0, 2, 2],
-                       vec![1., 2., 3., 4., 5.]);
+            // let a = CsMat::new((3, 3),
+            //            vec![0, 2, 4, 5],
+            //            vec![0, 1, 0, 2, 2],
+            //            vec![1., 2., 3., 4., 5.]);
                        
             // println!("{}", ind_ptr.clone().nnz());
             // println!("{}", nz_val.clone().len());
@@ -185,11 +190,12 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
                 if sol.col(cols[i]) - sol.col(cols[i + size]) != 0. {
                     ind.push(i);
                     val.push(sol.col(cols[i]) - sol.col(cols[i + size]));
+                    println!("{:?}", index_2_min.get(&i));
                 }
             }
             let mut v = CsVec::new(size, ind, val);
             // let x = &csr * &v;
-            // println!("{:?}", x);
+            println!("{:?}", v);
         return v;
 }
 fn main() {    
@@ -233,11 +239,11 @@ fn main() {
     let simplex_bar = simplex_barcode( &factored_complex, 1 );
     let mut sols: Vec<sprs::CsVecBase<std::vec::Vec<usize>, std::vec::Vec<f64>, f64>> = Vec::with_capacity(simplex_bar.len());
 
-    for j in 0..simplex_bar.len(){
+    for j in 1..2{//simplex_bar.len(){
         println!("{}", j);
         let birth = &simplex_bar[j].0;
         let death = &simplex_bar[j].1;
-        let v = tri_opt(false, ProgramType::MIP, 1, SimplexWeights::Uniform, &factored_complex, birth, death);
+        let v = tri_opt(true, ProgramType::MIP, 1, SimplexWeights::Uniform, &factored_complex, birth, death);
         sols.push(v);
     }
     
