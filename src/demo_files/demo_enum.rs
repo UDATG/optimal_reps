@@ -12,8 +12,6 @@ pub enum SimplexWeights {
 pub fn tri_opt( stuff, weight: SimplexWeights )
 
 {
-
-
     match weight {
         SimplexWeights::Uniform => {
             let weight_vector = ... make the weight vector

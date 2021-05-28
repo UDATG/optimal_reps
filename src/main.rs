@@ -27,42 +27,72 @@ fn ordered_floats_nested(v: Vec<Vec<f64>>) -> Vec< Vec< OrderedFloat<f64> > > {
     return v.into_iter().map( ordered_floats ).collect();
 }
 
+pub enum SimplexWeights {
+    Uniform,
+    Volume,
+}
+
+pub enum ProgramType {
+    LP,
+    MIP,
+}
+
 fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
 (
-    is_pos:bool, // optimize over the positive domain
-    is_int:bool,
-    dim:usize,
+    is_pos: bool, // optimize over the positive domain
+    is_int: ProgramType,
+    dim: usize,
+    weight: SimplexWeights, 
     factored_complex: &FactoredComplexBlockCsm<'a, MatrixIndexKey, Coefficient, Filtration, OriginalChx>,
     birth: &MatrixIndexKey,
-    death: &MatrixIndexKey)-> Vec<f64>
+    death: &MatrixIndexKey)-> sprs::CsVecBase<std::vec::Vec<usize>, std::vec::Vec<f64>, f64> // Vec<f64>
     where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matrix=Matrix>,
             MatrixIndexKey: PartialEq+ Eq + Clone + Hash + std::cmp::PartialOrd + Ord + std::fmt::Debug,
             Matrix: SmOracle<MatrixIndexKey, MatrixIndexKey, Coefficient>,
             Filtration: PartialOrd + Clone,
     {
+        
         let chx = &factored_complex.original_complex;
         let i = dim;
         let mut m = Model::default();
         m.set_parameter("log", "0"); // turn off logging 
+        println!("{:?}", birth);
+        println!("{:?}", death);
         // a list of tuples (birth simplex, death simplex)
-            // loop over Sn+1
-            let good_triangles = chx.keys_unordered_itr(i + 1).filter(|s| s <= &death && s >= &birth );
-            let size = good_triangles.count();
-            // loop over Sn
-            let Fn = chx.keys_unordered_itr(i).filter(|s| s <= &death && s >= &birth);
-            let obj_coef = vec![1.; 2 * size]; // c^T // 1 vector with length |Fn|
-            let cols: Vec<Col> = obj_coef.clone()
-                .into_iter()
-                .map(
-                    |x| {
-                        let col = m.add_col();
-                        if is_int {
-                            m.set_integer(col);
-                        }
-                        col
-                    },
-                )
-                .collect(); // x 
+        // loop over Sn+1
+        let good_triangles = chx.keys_unordered_itr(i + 1).filter(|s| s <= &death && s >= &birth );
+        let size = good_triangles.count();
+        // loop over Sn
+        let Fn = chx.keys_unordered_itr(i).filter(|s| s <= &death && s >= &birth);
+        let obj_coef;
+        match weight {
+            SimplexWeights::Uniform => {
+                obj_coef = vec![1.; 2 * size]; // c^T // 1 vector with length |Fn|
+            }
+            SimplexWeights::Volume => {
+                obj_coef = vec![1.; 2 * size]; // c^T // 1 vector with length |Fn|
+            }
+        }
+        let int; 
+        match is_int {
+            ProgramType::LP => {
+                int = false; // c^T // 1 vector with length |Fn|
+            }
+            ProgramType::MIP => {
+                int = true; // c^T // 1 vector with length |Fn|
+            }
+        }
+        let cols: Vec<Col> = obj_coef.clone()
+            .into_iter()
+            .map(
+                |x| {
+                    let col = m.add_col();
+                    if int {
+                        m.set_integer(col);
+                    }
+                    col
+                },
+            ).collect(); // x 
             for i in 0..obj_coef.len(){
                 m.set_obj_coeff(cols[i], obj_coef[i]); // setting up the objective function 
             }
@@ -83,9 +113,10 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
             let mut ind_ptr = Vec::new();
             ind_ptr.push(0);
             let mut col_ind = Vec::new();
-            let mut nz_val : Vec<Coefficient> = Vec::new();
+            let mut nz_val : Vec<f64> = Vec::new();
             let mut counter = 1;
             for edge in Fn{ // for each row 
+                // println!("{}", counter);
                 let row = m.add_row();
                 if &edge == birth {
                     if is_pos{
@@ -116,23 +147,29 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
                         println!("the edge that's contained in tau");
                         println!("{:?}", edge);
                     }
-                    if &tri <= &death && &tri >= &birth{
-                        // println!("{:?}", tri);
-                        
+                    if &tri <= &death && &tri >= &birth{                        
                         if !min_2_index.contains_key(&tri) {
                             min_2_index.insert(tri.clone(), min_index);
                             min_index = min_index + 1;
                         }
-                        
                         col_ind.push(*min_2_index.get(&tri).unwrap());
                         nz_val.push((data.numer()/data.denom()).into());
                         counter = counter+1;
                         m.set_weight(row,cols[*min_2_index.get(&tri).unwrap()] , (data.numer()/data.denom()).into());
                         m.set_weight(row,cols[*min_2_index.get(&tri).unwrap() + size] , (-data.numer()/data.denom()).into());
                     }
-                    ind_ptr.push(counter);
+                    
                 }
+                ind_ptr.push(counter);
             }
+            let a = CsMat::new((3, 3),
+                       vec![0, 2, 4, 5],
+                       vec![0, 1, 0, 2, 2],
+                       vec![1., 2., 3., 4., 5.]);
+                       
+            // println!("{}", ind_ptr.clone().nnz());
+            // println!("{}", nz_val.clone().len());
+            // let csr = CsMat::new((ind_ptr.clone().len() - 1, size), ind_ptr, col_ind, nz_val);
             // Set objective sense.
             m.set_obj_sense(Sense::Minimize);
             m.set_col_upper(cols[*min_2_index.get(&death).unwrap()], 1.0);
@@ -141,24 +178,31 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
             m.set_col_lower(cols[*min_2_index.get(&death).unwrap() + size], 0.0);
             // Solve the problem. Returns the solution
             let sol = m.solve();
-            let mut v = Vec::with_capacity(size);
+            
+            let mut ind = Vec::new();
+            let mut val = Vec::new();
             for i in 0..size{
-                v.push(sol.col(cols[i]) - sol.col(cols[i + size]));
+                if sol.col(cols[i]) - sol.col(cols[i + size]) != 0. {
+                    ind.push(i);
+                    val.push(sol.col(cols[i]) - sol.col(cols[i + size]));
+                }
             }
-
+            let mut v = CsVec::new(size, ind, val);
+            // let x = &csr * &v;
+            // println!("{:?}", x);
         return v;
 }
 fn main() {    
     // read file
     let mut f = BufReader::new(File::open("/Users/luli/Developer/optimal_reps/senate104_edge_list.txt_0.68902_distmat.txt").unwrap());
     let mut s = String::new();
+    
     let arr: Vec<Vec<f64>> = f.lines()
         .map(|l| l.unwrap().split(char::is_whitespace)
              .map(|number| number.parse().unwrap())
              .collect())
         .collect();
     let dismat = ordered_floats_nested(arr);
-    println!("{:?}", dismat.clone().len());
     let dim = 1;
     const maxdis: OrderedFloat<f64> = OrderedFloat(1.);
 
@@ -186,14 +230,14 @@ fn main() {
     println!("here3");
     let factored_complex = exhact::chx::factor_chain_complex(&chx, dim+1);
     println!("here4");
-    let mut simplex_bar = simplex_barcode( &factored_complex, 1 );
-    let mut sols: Vec<Vec<f64>> = Vec::with_capacity(simplex_bar.len());
+    let simplex_bar = simplex_barcode( &factored_complex, 1 );
+    let mut sols: Vec<sprs::CsVecBase<std::vec::Vec<usize>, std::vec::Vec<f64>, f64>> = Vec::with_capacity(simplex_bar.len());
 
     for j in 0..simplex_bar.len(){
         println!("{}", j);
         let birth = &simplex_bar[j].0;
         let death = &simplex_bar[j].1;
-        let v = tri_opt(false, true, 1, &factored_complex, birth, death);
+        let v = tri_opt(false, ProgramType::MIP, 1, SimplexWeights::Uniform, &factored_complex, birth, death);
         sols.push(v);
     }
     

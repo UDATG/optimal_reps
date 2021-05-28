@@ -8,8 +8,8 @@ edition = "2018"
 
 [dependencies]
 ndarray = {version = "0.15.1", features = ["rayon"] }
-# exhact = {path = "/Users/luli/Developer/exhact_rust-devel_haibin_comments"}
-exhact = {path = "/Users/gh10/a/c/pr/xh/r/exhact_rust_git"}
+exhact = {path = "/Users/luli/Developer/exhact_rust-devel_haibin_comments"}
+# exhact = {path = "/Users/gh10/a/c/pr/xh/r/exhact_rust_git"}
 num = "0.4.0"
 ordered-float = "2.2.0"
 gurobi = "0.3.4"
