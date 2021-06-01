@@ -14,24 +14,30 @@ https://github.com/coin-or/Cbc
 ### Mac
 
 * make sure you do not move the gurobi license file from the place it's first saved to
-* you'll need to set some "environmental variables", and you'll do this by modifying a `.bash_profile` folder
-    1. check to see if you have a file `/.bash_profile`
+* you'll need to set some "environmental variables"
+	
+	1. we will do this by modifying a `.bash_profile` folder 
+		* there are several other files you can modify to update an environmental variable, each with different effects 
+			* for Mac OS, see  [here](https://youngstone89.medium.com/setting-up-environment-variables-in-mac-os-28e5941c771c) 
+			* for `bash`, `zsh`, or `tcsh` login shells, see [this stack exchange](https://unix.stackexchange.com/questions/21598/how-do-i-set-a-user-environment-variable-permanently-not-session)
+			* some examples `/.bashrc`, `/etc/profile`, `~/.profile`, `~/.zprofile`
+    2. check to see if you have a file `/.bash_profile`
         a. You may have hit "Command + Shift + ." to show hidden files
         b. If you don't already have a `.bash_profile` file, then create one with a code editor like atom, sublime, vim, etc.
-    2. add the following lines to your `.bash_profile` file:
+    3. add the following lines to your `.bash_profile` file:
     
         ```
         # Environmental variables for Gurobi
         export GRB_LICENSE_FILE="path/to/gurobi.lic" # the license file
         export GUROBI_HOME="path/to/installation/folder" 
         ```
-    3. open a terminal and run
+    4. open a terminal and run
     
         ```
         source ~/.bash_profile
         ```
        to refresh your environmental variables with the new addition
-    4. run
+    5. run
     
        ```
        printenv
