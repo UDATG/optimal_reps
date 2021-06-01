@@ -17,10 +17,12 @@ https://github.com/coin-or/Cbc
 * you'll need to set some "environmental variables"
 	
 	1. we will do this by modifying a `.bash_profile` folder 
-		* there are several other files you can modify to update an environmental variable, each with different effects 
-			* for Mac OS, see  [here](https://youngstone89.medium.com/setting-up-environment-variables-in-mac-os-28e5941c771c) 
-			* for `bash`, `zsh`, or `tcsh` login shells, see [this stack exchange](https://unix.stackexchange.com/questions/21598/how-do-i-set-a-user-environment-variable-permanently-not-session)
-			* some examples `/.bashrc`, `/etc/profile`, `~/.profile`, `~/.zprofile`
+		* there are several other files you can modify to update an environmental variable, each with different effects (a few examples of such files include `/.bashrc`, `/etc/profile`, `~/.profile`, `~/.zprofile`)
+			* here are some partially overlapping online resources:
+				* for Mac OS  [here](https://youngstone89.medium.com/setting-up-environment-variables-in-mac-os-28e5941c771c) 
+				* for Mac, Linux, and Windows: [a nice discussion](https://gist.github.com/nex3/c395b2f8fd4b02068be37c961301caa7), 
+				* for `bash`, `zsh`, or `tcsh`  [a nice stack exchange](ttps://unix.stackexchange.com/questions/21598/how-do-i-set-a-user-environment-variable-permanently-not-session)
+
     2. check to see if you have a file `/.bash_profile`
         a. You may have hit "Command + Shift + ." to show hidden files
         b. If you don't already have a `.bash_profile` file, then create one with a code editor like atom, sublime, vim, etc.
