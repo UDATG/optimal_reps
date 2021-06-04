@@ -21,6 +21,41 @@ use std::ops::{Neg, AddAssign, Mul};
 // OriginalChx: ChainComplex<MatrixIndexKey, SnzVal, Filtration>
 
 
+// pub fn barcode(&self, h_degree: usize) -> Vec<(Filtration, Filtration)> {
+
+//     let mut barcode = Vec::new();
+//     if h_degree >= self.dim_rowoper.len() { return barcode; }
+//     //let keys = self.original_complex.keys_ordered(h_degree);
+//     let indexing = &self.dim_indexing[h_degree];
+//     let mut indexing_upper: &Indexing<MatrixIndexKey, MatrixIndexKey> = &Indexing::new();
+//     if h_degree+1 < self.dim_rowoper.len() {
+//         indexing_upper = &self.dim_indexing[h_degree+1];
+//     }
+
+//     for key in self.original_complex.keys_unordered_itr(h_degree) {
+//         if indexing.minkey_2_index.contains_key(&key) { continue; }
+//         else if indexing_upper.majkey_2_index.contains_key(&key) {
+//             let ind = indexing_upper.majkey_2_index[&key];
+//             let matched_key = &indexing_upper.index_2_minkey[ind];
+//             let diam1 = self.original_complex.key_2_filtration(&key);
+//             let diam2 = self.original_complex.key_2_filtration(matched_key);
+//             if diam1 == diam2 { continue; }
+//             barcode.push((diam1, diam2));
+//         } else {
+//             let diam1 = self.original_complex.key_2_filtration(&key);
+//             let diam2 = self.original_complex.max_filtration();
+//             if diam1 == diam2 { continue; }
+//             barcode.push((diam1, diam2));
+//         }
+//     }
+//     return barcode;
+
+// }
+
+
+
+
+
 pub fn simplex_barcode< Filtration, MatrixIndexKey, SnzVal, OriginalChx >
 
     (   factored: & FactoredComplexBlockCsm< MatrixIndexKey, SnzVal, Filtration, OriginalChx >, 
@@ -77,4 +112,3 @@ pub fn simplex_barcode< Filtration, MatrixIndexKey, SnzVal, OriginalChx >
     return simplexwise_barcode;
 }
 
-// }

@@ -8,7 +8,46 @@ Optimal cycle representatives
 
 https://github.com/coin-or/Cbc
 
-## Examples
+## Installing Gurobi
+
+
+### Mac
+
+* make sure you do not move the gurobi license file from the place it's first saved to
+* you'll need to set some "environmental variables"
+	
+	1. we will do this by modifying a `.bash_profile` folder 
+		* there are several other files you can modify to update an environmental variable, each with different effects (a few examples of such files include `/.bashrc`, `/etc/profile`, `~/.profile`, `~/.zprofile`)
+			* here are some partially overlapping online resources:
+				* for Mac OS  [here](https://youngstone89.medium.com/setting-up-environment-variables-in-mac-os-28e5941c771c) 
+				* for Mac, Linux, and Windows: [a nice discussion](https://gist.github.com/nex3/c395b2f8fd4b02068be37c961301caa7), 
+				* for `bash`, `zsh`, or `tcsh`  [a nice stack exchange](ttps://unix.stackexchange.com/questions/21598/how-do-i-set-a-user-environment-variable-permanently-not-session)
+
+    2. check to see if you have a file `/.bash_profile`
+        a. You may have hit "Command + Shift + ." to show hidden files
+        b. If you don't already have a `.bash_profile` file, then create one with a code editor like atom, sublime, vim, etc.
+    3. add the following lines to your `.bash_profile` file:
+    
+        ```
+        # Environmental variables for Gurobi
+        export GRB_LICENSE_FILE="path/to/gurobi.lic" # the license file
+        export GUROBI_HOME="path/to/installation/folder" 
+        ```
+    4. open a terminal and run
+    
+        ```
+        source ~/.bash_profile
+        ```
+       to refresh your environmental variables with the new addition
+    5. run
+    
+       ```
+       printenv
+       ```
+       to double check that the new variables have been added
+
+
+## Examples of homology computations
 
 * There are example files in `src/bin`
 * Suppose you want to compile and run the file `demo_rational.rs`, which lives in `src/bin`: 
