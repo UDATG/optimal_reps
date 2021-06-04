@@ -55,7 +55,9 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         let i = dim;
         let mut m = Model::default();
         m.set_parameter("log", "0"); // turn off logging 
+        println!("birth");
         println!("{:?}", birth);
+        println!("death");
         println!("{:?}", death);
         // a list of tuples (birth simplex, death simplex)
         // loop over Sn+1
@@ -97,7 +99,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
             }
             // build oracle for the entire boundary matrix
             let D =  chx.get_smoracle(exhact::matrix::MajorDimension::Row, exhact::chx::ChxTransformKind::Boundary);
-            let maj_fields = D.min_itr(&death);
+            let maj_fields = D.min_itr(&death);//iterator associated with the column representing the death simplex
             for item in maj_fields{
                 println!("{:?}",item);
                 println!("{}", &item.0 >= &birth && &item.0 <= &death);
@@ -115,11 +117,14 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
             ind_ptr.push(0);
             let mut col_ind = Vec::new();
             let mut nz_val : Vec<f64> = Vec::new();
+
             let mut counter = 1;
             for edge in Fn { // for each row 
                 // println!("{}", counter);
                 let row = m.add_row();
-                if &edge == birth {
+                
+                // set lower/upper bounds
+                if &edge == birth { // if the edge is the birth edge
                     if is_pos{
                         m.set_row_lower(row, f64::EPSILON);
                     }
@@ -127,12 +132,13 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
                         m.set_row_upper(row, -f64::EPSILON);
                     }
                 }
-                else{
+                else{ // else if birth time <= edge < death time
                     println!("0000");
                     println!("{:?}", edge);
-                    m.set_row_upper(row, 0.0);
+                    m.set_row_upper(row, 0.0); // force it to be 0
                     m.set_row_lower(row, 0.0);
                 }
+
                 if !maj_2_index.contains_key(&edge) {
                     maj_2_index.insert(edge.clone(), maj_index.clone());
                     index_2_maj.insert(maj_index.clone(), edge.clone());
@@ -152,21 +158,23 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
                     //     println!("{:?}", edge);
                     // }
                     if &tri <= &death && &tri >= &birth{                        
-                        if !min_2_index.contains_key(&tri) {
+                        if !min_2_index.contains_key(&tri) { // update hashmap
                             min_2_index.insert(tri.clone(), min_index.clone());
                             index_2_min.insert(min_index.clone(), tri.clone());
                             min_index = min_index + 1;
                         }
-                        col_ind.push(*min_2_index.get(&tri).unwrap());
-                        nz_val.push((data.numer()/data.denom()).into());
+                        col_ind.push(*min_2_index.get(&tri).unwrap()); // csr
+                        nz_val.push((data.numer()/data.denom()).into()); //csr 
                         counter = counter+1;
-                        m.set_weight(row, cols[*min_2_index.get(&tri).unwrap()], (data.numer()/data.denom()).into());
-                        m.set_weight(row, cols[*min_2_index.get(&tri).unwrap() + size], (-data.numer()/data.denom()).into());
+                        // set weight
+                        m.set_weight(row, cols[*min_2_index.get(&tri).unwrap()], (data.numer()/data.denom()).into()); // x+
+                        m.set_weight(row, cols[*min_2_index.get(&tri).unwrap() + size], (-data.numer()/data.denom()).into());//x-
                     }
                     
                 }
                 ind_ptr.push(counter);
             }
+
             // let a = CsMat::new((3, 3),
             //            vec![0, 2, 4, 5],
             //            vec![0, 1, 0, 2, 2],
@@ -175,12 +183,16 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
             // println!("{}", ind_ptr.clone().nnz());
             // println!("{}", nz_val.clone().len());
             // let csr = CsMat::new((ind_ptr.clone().len() - 1, size), ind_ptr, col_ind, nz_val);
+
             // Set objective sense.
             m.set_obj_sense(Sense::Minimize);
+
+            // set v_tau = 1
             m.set_col_upper(cols[*min_2_index.get(&death).unwrap()], 1.0);
             m.set_col_lower(cols[*min_2_index.get(&death).unwrap()], 1.0);
             m.set_col_upper(cols[*min_2_index.get(&death).unwrap() + size], 0.0);
             m.set_col_lower(cols[*min_2_index.get(&death).unwrap() + size], 0.0);
+
             // Solve the problem. Returns the solution
             let sol = m.solve();
             
@@ -195,12 +207,13 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
             }
             let mut v = CsVec::new(size, ind, val);
             // let x = &csr * &v;
+            println!("v");
             println!("{:?}", v);
         return v;
 }
 fn main() {    
     // read file
-    let mut f = BufReader::new(File::open("/Users/luli/Developer/optimal_reps/senate104_edge_list.txt_0.68902_distmat.txt").unwrap());
+    let mut f = BufReader::new(File::open("/Users/lizhaoheng/Desktop/optimal_reps/senate104_edge_list.txt_0.68902_distmat.txt").unwrap());
     let mut s = String::new();
     
     let arr: Vec<Vec<f64>> = f.lines()
@@ -239,7 +252,7 @@ fn main() {
     let simplex_bar = simplex_barcode( &factored_complex, 1 );
     let mut sols: Vec<sprs::CsVecBase<std::vec::Vec<usize>, std::vec::Vec<f64>, f64>> = Vec::with_capacity(simplex_bar.len());
 
-    for j in 1..2{//simplex_bar.len(){
+    for j in 1..3{//simplex_bar.len(){
         println!("{}", j);
         let birth = &simplex_bar[j].0;
         let death = &simplex_bar[j].1;
