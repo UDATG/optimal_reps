@@ -8,8 +8,7 @@ edition = "2018"
 
 [dependencies]
 ndarray = {version = "0.15.1", features = ["rayon"] }
-exhact = {path = "/Users/summerResearch2020/Downloads/exhact_rust"}
-# exhact = {path = "/Users/gh10/a/c/pr/xh/r/exhact_rust_git"}
+exhact = {path="C:\\Users\\26389\\github\\exhact_project\\exhact_rust"}
 num = "0.4.0"
 ordered-float = "2.2.0"
 gurobi = "0.3.4"
