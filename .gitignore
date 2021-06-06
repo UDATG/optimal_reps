@@ -22,6 +22,8 @@ Cargo.lock
 # Weird Mac files?
 Icon*
 
+Cargo.toml
+
 
 #-----------------------------------------------------
 #   GENERAL VIM IGNORES
