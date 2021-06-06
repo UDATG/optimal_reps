@@ -30,4 +30,5 @@ Icon*
 # Temporary files
 *.swp
 
+logfile.log
 
