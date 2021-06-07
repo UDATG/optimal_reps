@@ -67,8 +67,9 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         let good_triangles_copy = chx.keys_unordered_itr(i + 1).filter(|s| s <= &death && s >= &birth );
         let size = good_triangles_copy.count();
 
-        // loop over Sn
-        let good_edges = chx.keys_unordered_itr(i).filter(|s| s <= &death && s >= &birth);
+        // Create F_n
+        // sigma'>sigma in the linear order
+        let good_edges = chx.keys_unordered_itr(i).filter(|s| s <= &death && s > &birth);
         let obj_coef;
         match weight {
             SimplexWeights::Uniform => {
@@ -105,7 +106,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
             let mut name = format!("{}{}", "x_pos", i);
 
             let mut str_name = &name[..];
-            v_pos.push(model.add_var(str_name, program_type, 0.0, -INFINITY, INFINITY, &[], &[]).unwrap());
+            v_pos.push(model.add_var(str_name, program_type, 1.0, 0.0, INFINITY, &[], &[]).unwrap());
         }
 
         // initialize the vector: v-
@@ -116,7 +117,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
             let mut name = format!("{}{}", "x_neg", i);
 
             let mut str_name = &name[..];
-            v_neg.push(model.add_var(str_name, program_type, 0.0, -INFINITY, INFINITY, &[], &[]).unwrap());
+            v_neg.push(model.add_var(str_name, program_type, 1.0, 0.0, INFINITY, &[], &[]).unwrap());
         }
         
         // Set objective function
@@ -133,6 +134,10 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
             obj_expression = obj_expression.add_term(1.0, v_neg[i].clone());
 
         }
+      
+
+         // integrate all of the constraints into the model.
+         model.update().unwrap();
 
         // create hashmaps to store triangles to indices 
         let mut triangle_2_index: HashMap<MatrixIndexKey, usize> = HashMap::new();       
@@ -141,6 +146,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         let mut maj_index:usize = 0;
         
         for triangle in good_triangles { // for each column
+            println!("{:?} good_triangles", triangle.clone());
             if !triangle_2_index.contains_key(&triangle) {
                 triangle_2_index.insert(triangle.clone(), maj_index.clone());
                 index_2_triangle.insert(maj_index.clone(), triangle.clone());
@@ -153,26 +159,30 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         let D =  chx.get_smoracle(exhact::matrix::MajorDimension::Row, exhact::chx::ChxTransformKind::Boundary);
 
         //Set up the first kind of constraint
+        // D_{n+1}[sigma,\hat{F}_{n+1}] v != 0 
         let row = D.maj_itr(&birth);
 
         let mut constraint1 = LinExpr::new();
         for item in row{
             if (&item.0 >= &birth && &item.0 <= &death){
-                let mut index: usize = *triangle_2_index.get(&item.0).unwrap();
+                let mut index: usize = triangle_2_index.get(&item.0).unwrap().clone();
+                // set coefficients
                 constraint1 = constraint1.add_term((item.1.numer()/item.1.denom()).into(), v_pos[index].clone());
                 constraint1 = constraint1.add_term((-item.1.numer()/item.1.denom()).into(), v_neg[index].clone());
             }
         }
-
+        // set constraintSense to be either greater or less than 0
         model.add_constr("constraint1", constraint1, constraintSense, 0.0);
 
         //Set up the second kind of constraint
+        // D_{n+1}[F_n,\hat{F}_{n+1}] v == 0 
         for edge in good_edges{
+            println!("{:?} good_edges", edge.clone());
             let mut row_ctr2 = D.maj_itr(&edge);
             let mut constraint2 = LinExpr::new();
             for item in row_ctr2{
                 if (&item.0 >= &birth && &item.0 <= &death){
-                    let mut index: usize = *triangle_2_index.get(&item.0).unwrap();
+                    let mut index: usize = triangle_2_index.get(&item.0).unwrap().clone();
                     constraint2 = constraint2.add_term((item.1.numer()/item.1.denom()).into(), v_pos[index].clone());
                     constraint2 = constraint2.add_term((-item.1.numer()/item.1.denom()).into(), v_neg[index].clone());
                 }
@@ -184,7 +194,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         //Set up the third kind of constraint
         // v+ (death) = 1
         let mut constraint3 = LinExpr::new();
-        let mut index_ctr3: usize = *triangle_2_index.get(&death).unwrap();
+        let mut index_ctr3: usize = triangle_2_index.get(&death).unwrap().clone();
 
         constraint3 = constraint3.add_term(1.0,v_pos[index_ctr3].clone());
 
@@ -192,18 +202,30 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
 
         // v- (death) = 0
         let mut constraint4 = LinExpr::new();
-        let mut index_ctr4: usize = *triangle_2_index.get(&death).unwrap();
+        let mut index_ctr4: usize = triangle_2_index.get(&death).unwrap().clone();
 
         constraint4 = constraint4.add_term(1.0,v_neg[index_ctr4].clone());
 
         model.add_constr("constraint4", constraint4 , Equal, 0.0);
 
+        // integrate all of the constraints into the model.
+        model.update().unwrap();
+        // add objective function to model
+        //model.set_objective(obj_expression,Minimize).unwrap();
+
+
         model.write("logfile.lp").unwrap();
 
         model.optimize().unwrap();
-        let v_pos_val = model.get_values(attr::X, &v_pos);
         let v_neg_val = model.get_values(attr::X, &v_neg);
 
+        println!("NEGATIVE");
+        println!("{:?}", v_neg_val);
+
+        let v_pos_val = model.get_values(attr::X, &v_pos);
+        
+
+        println!("POSITIVE");
         println!("{:?}", v_pos_val);
         // let v = Vec::new();
         // for i in 0..size{
@@ -263,11 +285,13 @@ fn main() {
     let simplex_bar = simplex_barcode( &factored_complex, 1 );
     
 
-    for j in 1..2{//simplex_bar.len(){
-        
+    for j in 2..3{//simplex_bar.len(){
+        println!("{}", j);
         let birth = &simplex_bar[j].0;
         let death = &simplex_bar[j].1;
-        let v = tri_opt(true,true, 1, SimplexWeights::Uniform, &factored_complex, birth, death);
+        println!("{:?} birth" ,birth.clone());
+        println!("{:?} death",death.clone());
+        let v = tri_opt(false,true, 1, SimplexWeights::Uniform, &factored_complex, birth, death);
         //sols.push(v);
     }
 
