@@ -62,7 +62,11 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         // a list of tuples (birth simplex, death simplex)
         // loop over Sn+1
         let good_triangles = chx.keys_unordered_itr(i + 1).filter(|s| s <= &death && s >= &birth );
-        let size = good_triangles.count();
+        
+        // count the size of good triangles
+        let good_triangles_copy = chx.keys_unordered_itr(i + 1).filter(|s| s <= &death && s >= &birth );
+        let size = good_triangles_copy.count();
+
         // loop over Sn
         let good_edges = chx.keys_unordered_itr(i).filter(|s| s <= &death && s >= &birth);
         let obj_coef;
@@ -74,13 +78,22 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
                 obj_coef = vec![1.; 2 * size]; // c^T // 1 vector with length |Fn|
             }
         }
-        
+        // Set program type
         let mut program_type = Integer;
         if (is_int){
             program_type = Integer;
         }
         else{
             program_type = Continuous;
+        }
+
+        // Set constraint sense
+        let mut constraintSense = Greater;
+        if (is_pos){
+            constraintSense = Greater;
+        }
+        else{
+            constraintSense = Less;
         }
         
 
@@ -109,123 +122,95 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         // Set objective function
         let mut obj_expression: LinExpr = LinExpr::new();
         
-
-        let coeffs_vec= vec![1.0; size]; 
-        let coeffs: &[f64] = &coeffs_vec[..];
-
-        let a:&[f64] =&[1.0,11.0,1.0];
-        // obj_expression.add_terms(coeffs: a, vars: &v_pos[..]);
-
-        // for i in 0..size{    
+        for i in 0..size{    
             
-        //     obj_expression.add_term(1.0, v_pos[i].clone());
+            obj_expression = obj_expression.add_term(1.0, v_pos[i].clone());
 
+        }
+
+        for i in 0..size{    
+            
+            obj_expression = obj_expression.add_term(1.0, v_neg[i].clone());
+
+        }
+
+        // create hashmaps to store triangles to indices 
+        let mut triangle_2_index: HashMap<MatrixIndexKey, usize> = HashMap::new();       
+        let mut index_2_triangle: HashMap<usize, MatrixIndexKey> = HashMap::new();       
+        // initialize indices to be 0   
+        let mut maj_index:usize = 0;
+        
+        for triangle in good_triangles { // for each column
+            if !triangle_2_index.contains_key(&triangle) {
+                triangle_2_index.insert(triangle.clone(), maj_index.clone());
+                index_2_triangle.insert(maj_index.clone(), triangle.clone());
+                maj_index = maj_index + 1;
+            }
+        }
+
+
+        // build oracle for the entire boundary matrix
+        let D =  chx.get_smoracle(exhact::matrix::MajorDimension::Row, exhact::chx::ChxTransformKind::Boundary);
+
+        //Set up the first kind of constraint
+        let row = D.maj_itr(&birth);
+
+        let mut constraint1 = LinExpr::new();
+        for item in row{
+            if (&item.0 >= &birth && &item.0 <= &death){
+                let mut index: usize = *triangle_2_index.get(&item.0).unwrap();
+                constraint1 = constraint1.add_term((item.1.numer()/item.1.denom()).into(), v_pos[index].clone());
+                constraint1 = constraint1.add_term((-item.1.numer()/item.1.denom()).into(), v_neg[index].clone());
+            }
+        }
+
+        model.add_constr("constraint1", constraint1, constraintSense, 0.0);
+
+        //Set up the second kind of constraint
+        for edge in good_edges{
+            let mut row_ctr2 = D.maj_itr(&edge);
+            let mut constraint2 = LinExpr::new();
+            for item in row_ctr2{
+                if (&item.0 >= &birth && &item.0 <= &death){
+                    let mut index: usize = *triangle_2_index.get(&item.0).unwrap();
+                    constraint2 = constraint2.add_term((item.1.numer()/item.1.denom()).into(), v_pos[index].clone());
+                    constraint2 = constraint2.add_term((-item.1.numer()/item.1.denom()).into(), v_neg[index].clone());
+                }
+            }
+            model.add_constr("constraint2", constraint2, Equal, 0.0);
+
+        }
+
+        //Set up the third kind of constraint
+        // v+ (death) = 1
+        let mut constraint3 = LinExpr::new();
+        let mut index_ctr3: usize = *triangle_2_index.get(&death).unwrap();
+
+        constraint3 = constraint3.add_term(1.0,v_pos[index_ctr3].clone());
+
+        model.add_constr("constraint3", constraint3 , Equal, 1.0);
+
+        // v- (death) = 0
+        let mut constraint4 = LinExpr::new();
+        let mut index_ctr4: usize = *triangle_2_index.get(&death).unwrap();
+
+        constraint4 = constraint4.add_term(1.0,v_neg[index_ctr4].clone());
+
+        model.add_constr("constraint4", constraint4 , Equal, 0.0);
+
+        model.write("logfile.lp").unwrap();
+
+        model.optimize().unwrap();
+        let v_pos_val = model.get_values(attr::X, &v_pos);
+        let v_neg_val = model.get_values(attr::X, &v_neg);
+
+        println!("{:?}", v_pos_val);
+        // let v = Vec::new();
+        // for i in 0..size{
+        //     v.push(v_pos_val[i]- v_neg_val[i]);
         // }
 
 
-
-//             // build oracle for the entire boundary matrix
-        let D =  chx.get_smoracle(exhact::matrix::MajorDimension::Row, exhact::chx::ChxTransformKind::Boundary);
-        let maj_fields = D.min_itr(&death);
-        for item in maj_fields{
-            println!("{:?}",item);
-            println!("{}", &item.0 >= &birth && &item.0 <= &death);
-        }
-//             // create hashmaps to store keys to indices 
-//             let mut maj_2_index: HashMap<MatrixIndexKey, usize> = HashMap::new();       
-//             let mut min_2_index: HashMap<MatrixIndexKey, usize> = HashMap::new();   
-//             let mut index_2_maj: HashMap<usize, MatrixIndexKey> = HashMap::new();       
-//             let mut index_2_min: HashMap<usize, MatrixIndexKey> = HashMap::new();  
-//             // initialize indices to be 0   
-//             let mut maj_index:usize = 0;
-//             let mut min_index:usize = 0;
-//             // create sparse matrix
-//             let mut ind_ptr = Vec::new();
-//             ind_ptr.push(0);
-//             let mut col_ind = Vec::new();
-//             let mut nz_val : Vec<f64> = Vec::new();
-//             let mut counter = 1;
-//             for edge in Fn { // for each row 
-//                 // println!("{}", counter);
-//                 let row = m.add_row();
-//                 if &edge == birth {
-//                     if is_pos{
-//                         m.set_row_lower(row, f64::EPSILON);
-//                     }
-//                     else{
-//                         m.set_row_upper(row, -f64::EPSILON);
-//                     }
-//                 }
-//                 else{
-//                     println!("0000");
-//                     println!("{:?}", edge);
-//                     m.set_row_upper(row, 0.0);
-//                     m.set_row_lower(row, 0.0);
-//                 }
-//                 if !maj_2_index.contains_key(&edge) {
-//                     maj_2_index.insert(edge.clone(), maj_index.clone());
-//                     index_2_maj.insert(maj_index.clone(), edge.clone());
-//                     maj_index = maj_index + 1;
-//                 }
-//                 let minor_fields = D.maj_itr(&edge);
-//                 for minor_field in minor_fields{
-//                     // column index (S_{n+1})
-//                     let tri = minor_field.0;
-//                     // entry value
-//                     let data = minor_field.1;
-                    
-//                     // if &tri == death{
-//                     //     println!("tau");
-//                     //     println!("{:?}", min_2_index.contains_key(&tri));
-//                     //     println!("the edge that's contained in tau");
-//                     //     println!("{:?}", edge);
-//                     // }
-//                     if &tri <= &death && &tri >= &birth{                        
-//                         if !min_2_index.contains_key(&tri) {
-//                             min_2_index.insert(tri.clone(), min_index.clone());
-//                             index_2_min.insert(min_index.clone(), tri.clone());
-//                             min_index = min_index + 1;
-//                         }
-//                         col_ind.push(*min_2_index.get(&tri).unwrap());
-//                         nz_val.push((data.numer()/data.denom()).into());
-//                         counter = counter+1;
-//                         m.set_weight(row, cols[*min_2_index.get(&tri).unwrap()], (data.numer()/data.denom()).into());
-//                         m.set_weight(row, cols[*min_2_index.get(&tri).unwrap() + size], (-data.numer()/data.denom()).into());
-//                     }
-                    
-//                 }
-//                 ind_ptr.push(counter);
-//             }
-//             // let a = CsMat::new((3, 3),
-//             //            vec![0, 2, 4, 5],
-//             //            vec![0, 1, 0, 2, 2],
-//             //            vec![1., 2., 3., 4., 5.]);
-                       
-//             // println!("{}", ind_ptr.clone().nnz());
-//             // println!("{}", nz_val.clone().len());
-//             // let csr = CsMat::new((ind_ptr.clone().len() - 1, size), ind_ptr, col_ind, nz_val);
-//             // Set objective sense.
-//             m.set_obj_sense(Sense::Minimize);
-//             m.set_col_upper(cols[*min_2_index.get(&death).unwrap()], 1.0);
-//             m.set_col_lower(cols[*min_2_index.get(&death).unwrap()], 1.0);
-//             m.set_col_upper(cols[*min_2_index.get(&death).unwrap() + size], 0.0);
-//             m.set_col_lower(cols[*min_2_index.get(&death).unwrap() + size], 0.0);
-//             // Solve the problem. Returns the solution
-//             let sol = m.solve();
-            
-//             let mut ind = Vec::new();
-//             let mut val = Vec::new();
-//             for i in 0..size{
-//                 if sol.col(cols[i]) - sol.col(cols[i + size]) != 0. {
-//                     ind.push(i);
-//                     val.push(sol.col(cols[i]) - sol.col(cols[i + size]));
-//                     println!("{:?}", index_2_min.get(&i));
-//                 }
-//             }
-//             let mut v = CsVec::new(size, ind, val);
-//             // let x = &csr * &v;
-//             println!("{:?}", v);
-//         return v;
 }
 
 fn main() {    
