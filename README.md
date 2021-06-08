@@ -46,6 +46,12 @@ https://github.com/coin-or/Cbc
        ```
        to double check that the new variables have been added
 
+#### Set System Environment Variable
+1. Build a plist file (https://discussions.apple.com/thread/7814747)
+2. Setup, activate and launch the plist as instructed by
+      https://support.shotgunsoftware.com/hc/en-us/articles/219042108-Setting-global-environment-variables-on-OS-X
+      
+* The set_objective function in Gurobi doesn't seem to work. However, the function can compile without this line.
 
 ## Examples of homology computations
 
