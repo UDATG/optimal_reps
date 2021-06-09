@@ -203,6 +203,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         // v- (death) = 0
         let mut constraint4 = LinExpr::new();
         let mut index_ctr4: usize = triangle_2_index.get(&death).unwrap().clone();
+        println!("{:?}",index_ctr4);
 
         constraint4 = constraint4.add_term(1.0,v_neg[index_ctr4].clone());
 
@@ -213,24 +214,28 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         // add objective function to model
         //model.set_objective(obj_expression,Minimize).unwrap();
 
+        println!("{:?}", size);
+
 
         model.write("logfile.lp").unwrap();
 
         model.optimize().unwrap();
-        let v_neg_val = model.get_values(attr::X, &v_neg);
+        let v_neg_val = model.get_values(attr::X, &v_neg).unwrap();
 
         println!("NEGATIVE");
         println!("{:?}", v_neg_val);
+        // let () = model.get_values(attr::X, &v_pos);
 
-        let v_pos_val = model.get_values(attr::X, &v_pos);
+        let v_pos_val = model.get_values(attr::X, &v_pos).unwrap();
         
 
         println!("POSITIVE");
         println!("{:?}", v_pos_val);
-        // let v = Vec::new();
-        // for i in 0..size{
-        //     v.push(v_pos_val[i]- v_neg_val[i]);
-        // }
+        let mut v = Vec::new();
+
+        for i in 0..size{
+            v.push(v_pos_val[i]- v_neg_val[i]);
+        }
 
 
 }
