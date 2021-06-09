@@ -146,7 +146,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         let mut maj_index:usize = 0;
         
         for triangle in good_triangles { // for each column
-            println!("{:?} good_triangles", triangle.clone());
+            //println!("{:?} good_triangles", triangle.clone());
             if !triangle_2_index.contains_key(&triangle) {
                 triangle_2_index.insert(triangle.clone(), maj_index.clone());
                 index_2_triangle.insert(maj_index.clone(), triangle.clone());
@@ -177,7 +177,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         //Set up the second kind of constraint
         // D_{n+1}[F_n,\hat{F}_{n+1}] v == 0 
         for edge in good_edges{
-            println!("{:?} good_edges", edge.clone());
+            //println!("{:?} good_edges", edge.clone());
             let mut row_ctr2 = D.maj_itr(&edge);
             let mut constraint2 = LinExpr::new();
             for item in row_ctr2{
@@ -217,22 +217,28 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         model.write("logfile.lp").unwrap();
 
         model.optimize().unwrap();
-        let v_neg_val = model.get_values(attr::X, &v_neg);
+        let v_neg_val = model.get_values(attr::X, &v_neg).unwrap();
 
-        println!("NEGATIVE");
-        println!("{:?}", v_neg_val);
 
-        let v_pos_val = model.get_values(attr::X, &v_pos);
+        let v_pos_val = model.get_values(attr::X, &v_pos).unwrap();
+
+
+
+        let mut ind = Vec::new();
+        let mut val = Vec::new();
+        for i in 0..size{
+            if v_pos_val[i]- v_neg_val[i]!=0.{
+                ind.push(i);
+                val.push(v_pos_val[i]- v_neg_val[i]);
+                println!("{:?} simplex", index_2_triangle.get(&i));
+            }
+            // println!("HERE")；
+            // println!("{:?}", v.push(v_pos_val[i]- v_neg_val[i]));
+            // v.push(v_pos_val[i]- v_neg_val[i]);
+        }
+        let mut v = CsVec::new(size, ind, val);
+        println!("{:?}", v);
         
-
-        println!("POSITIVE");
-        println!("{:?}", v_pos_val);
-        // let v = Vec::new();
-        // for i in 0..size{
-        //     v.push(v_pos_val[i]- v_neg_val[i]);
-        // }
-
-
 }
 
 fn main() {    
