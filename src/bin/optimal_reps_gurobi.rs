@@ -12,6 +12,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::hash::Hash;
 use optimal_representatives::simplex_bar::{simplex_barcode};
+use exhact::solver::multiply_hash_smoracle; // multiply a hashmap by a sparce matrix oracle
 
 // must add the following line to dependencies under Cargo.toml:
 //      ordered-float = "2.0"
@@ -28,37 +29,55 @@ fn ordered_floats_nested(v: Vec<Vec<f64>>) -> Vec< Vec< OrderedFloat<f64> > > {
     return v.into_iter().map( ordered_floats ).collect();
 }
 
-pub enum SimplexWeights {
-    Uniform,
-    Volume,
+fn rational_to_float(r: Ratio<i16>)->f64{
+    return r.numer().clone() as f64/r.denom().clone() as f64;
 }
 
-// pub enum ProgramType {
-//     LP,
-//     MIP,
-// }
 
-fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
+fn volume( simp: &Simplex<OrderedFloat<f64>>, dismat: &Vec<Vec<OrderedFloat<f64>>> ) -> f64 {
+
+    
+   let a = f64::from(dismat[simp.vertices[0] as usize][simp.vertices[1] as usize]);
+   let b = f64::from(dismat[simp.vertices[0] as usize][simp.vertices[2] as usize]);
+   let c = f64::from(dismat[simp.vertices[1] as usize][simp.vertices[0] as usize]);
+   let s = (a + b + c)/2.;
+   let t = s*(s-a)*(s-b)*(s-c);
+   if t<0.{
+       println!("Triangle inequalty is violated. This message is generated in function volume.");
+   }
+
+//       println!("{:?} area",(s*(s-a)*(s-b)*(s-c)).sqrt() );  
+//       println!("{:?} val",s*(s-a)*(s-b)*(s-c) );  
+      
+//          println!("{:?} a", a);
+//    println!("{:?} b", b);
+//    println!("{:?} c", c);
+   return t.sqrt();
+ }
+
+
+
+fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
 (
     is_pos: bool, // optimize over the positive domain
     is_int: bool,
     dim: usize,
-    weight: SimplexWeights, 
+    weight: WeightFunction,
     factored_complex: &FactoredComplexBlockCsm<'a, MatrixIndexKey, Coefficient, Filtration, OriginalChx>,
     birth: &MatrixIndexKey,
-    death: &MatrixIndexKey)//-> sprs::CsVecBase<std::vec::Vec<usize>, std::vec::Vec<f64>, f64> // Vec<f64>
+    death: &MatrixIndexKey)-> HashMap<MatrixIndexKey, f64> //-> sprs::CsVecBase<std::vec::Vec<usize>, std::vec::Vec<f64>, f64> // Vec<f64>
     where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matrix=Matrix>,
             MatrixIndexKey: PartialEq+ Eq + Clone + Hash + std::cmp::PartialOrd + Ord + std::fmt::Debug,
             Matrix: SmOracle<MatrixIndexKey, MatrixIndexKey, Coefficient>,
             Filtration: PartialOrd + Clone,
+            WeightFunction: Fn( &MatrixIndexKey ) -> f64
     {
         let chx = &factored_complex.original_complex;
         let i = dim;
         let env = Env::new("logfile.log").unwrap();
         let mut model = env.new_model("model1").unwrap();
        
-        println!("{:?}", birth);
-        println!("{:?}", death);
+ 
         // a list of tuples (birth simplex, death simplex)
         // loop over Sn+1
         let good_triangles = chx.keys_unordered_itr(i + 1).filter(|s| s <= &death && s >= &birth );
@@ -67,18 +86,28 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         let good_triangles_copy = chx.keys_unordered_itr(i + 1).filter(|s| s <= &death && s >= &birth );
         let size = good_triangles_copy.count();
 
+         // build oracle for the entire boundary matrix
+         let D =  chx.get_smoracle(exhact::matrix::MajorDimension::Row, exhact::chx::ChxTransformKind::Boundary);
+
+
         // Create F_n
         // sigma'>sigma in the linear order
         let good_edges = chx.keys_unordered_itr(i).filter(|s| s <= &death && s > &birth);
-        let obj_coef;
-        match weight {
-            SimplexWeights::Uniform => {
-                obj_coef = vec![1.; 2 * size]; // c^T // 1 vector with length |Fn|
-            }
-            SimplexWeights::Volume => {
-                obj_coef = vec![1.; 2 * size]; // c^T // 1 vector with length |Fn|
-            }
-        }
+
+        // set weight
+        // match weight {
+        //     SimplexWeights::Uniform => {
+        //         obj_coef = vec![1.; 2 * size]; // c^T // 1 vector with length |Fn|
+        //     }
+        //     SimplexWeights::Area => {
+        //         let 
+
+        //         obj_coef = vec![1.; 2 * size]; // c^T // 1 vector with length |Fn|
+        //     }
+        // }
+
+
+
         // Set program type
         let mut program_type = Integer;
         if (is_int){
@@ -96,6 +125,21 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         else{
             constraintSense = Less;
         }
+
+        // create hashmaps to store triangles to indices 
+        let mut triangle_2_index: HashMap<MatrixIndexKey, usize> = HashMap::new();       
+        let mut index_2_triangle: HashMap<usize, MatrixIndexKey> = HashMap::new();       
+        // initialize indices to be 0   
+        let mut maj_index:usize = 0;
+        
+        for triangle in good_triangles { // for each column
+            //println!("{:?} good_triangles", triangle.clone());
+            if !triangle_2_index.contains_key(&triangle) {
+                triangle_2_index.insert(triangle.clone(), maj_index.clone());
+                index_2_triangle.insert(maj_index.clone(), triangle.clone());
+                maj_index = maj_index + 1;
+            }
+        }
         
 
         // initialize the vector: v+
@@ -106,7 +150,8 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
             let mut name = format!("{}{}", "x_pos", i);
 
             let mut str_name = &name[..];
-            v_pos.push(model.add_var(str_name, program_type, 1.0, 0.0, INFINITY, &[], &[]).unwrap());
+           
+            v_pos.push(model.add_var(str_name, program_type, weight(index_2_triangle.get(&i).unwrap()), 0.0, INFINITY, &[], &[]).unwrap());
         }
 
         // initialize the vector: v-
@@ -117,7 +162,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
             let mut name = format!("{}{}", "x_neg", i);
 
             let mut str_name = &name[..];
-            v_neg.push(model.add_var(str_name, program_type, 1.0, 0.0, INFINITY, &[], &[]).unwrap());
+            v_neg.push(model.add_var(str_name, program_type, weight(index_2_triangle.get(&i).unwrap()), 0.0, INFINITY, &[], &[]).unwrap());
         }
         
         // Set objective function
@@ -139,24 +184,10 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
          // integrate all of the constraints into the model.
          model.update().unwrap();
 
-        // create hashmaps to store triangles to indices 
-        let mut triangle_2_index: HashMap<MatrixIndexKey, usize> = HashMap::new();       
-        let mut index_2_triangle: HashMap<usize, MatrixIndexKey> = HashMap::new();       
-        // initialize indices to be 0   
-        let mut maj_index:usize = 0;
-        
-        for triangle in good_triangles { // for each column
-            //println!("{:?} good_triangles", triangle.clone());
-            if !triangle_2_index.contains_key(&triangle) {
-                triangle_2_index.insert(triangle.clone(), maj_index.clone());
-                index_2_triangle.insert(maj_index.clone(), triangle.clone());
-                maj_index = maj_index + 1;
-            }
-        }
 
 
-        // build oracle for the entire boundary matrix
-        let D =  chx.get_smoracle(exhact::matrix::MajorDimension::Row, exhact::chx::ChxTransformKind::Boundary);
+        // // build oracle for the entire boundary matrix
+        // let D =  chx.get_smoracle(exhact::matrix::MajorDimension::Row, exhact::chx::ChxTransformKind::Boundary);
 
         //Set up the first kind of constraint
         // D_{n+1}[sigma,\hat{F}_{n+1}] v != 0 
@@ -238,6 +269,42 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
         }
         let mut v = CsVec::new(size, ind, val);
         println!("{:?}", v);
+
+        // hashmap (triangle, coefficients) for triangles present in the 2-chain
+        let mut solution_hash_triangle: HashMap<MatrixIndexKey, f64> = HashMap::new();  
+        for i in 0..size{
+            let sol_value = v_pos_val[i]- v_neg_val[i];
+            if sol_value!=0.{
+                solution_hash_triangle.insert(index_2_triangle.get(&i).unwrap().clone(), sol_value);
+            }
+        }
+
+        // hashmap (edge,coefficients)
+        let mut solution_hash_edge : HashMap<MatrixIndexKey, f64> = HashMap::new();  
+        for (tri_key, tri_val) in solution_hash_triangle {
+            for ( edge_key, edge_val) in D.min_itr(& tri_key ) {
+                if !solution_hash_edge.contains_key(&edge_key){
+                    // add key 
+                    // val = edge_val*tri_val
+                    solution_hash_edge.insert(edge_key, rational_to_float(edge_val)*tri_val);
+                }
+                else{
+                     // update val = current_val+edge_val*tri_val
+                    let mut current_val = solution_hash_edge.get_mut(&edge_key).unwrap();
+                    *current_val =  *current_val+(rational_to_float(edge_val))*tri_val;
+                }
+            }
+        }
+
+        let support : Vec<_> = solution_hash_edge.keys().cloned().collect();
+        for edge_key in support{
+            if solution_hash_edge.get(&edge_key).unwrap()==&0.{
+                solution_hash_edge.remove(&edge_key);
+            }
+        }
+
+        return solution_hash_edge
+
         
 }
 
@@ -252,6 +319,7 @@ fn main() {
           .collect())
      .collect();
     let dismat = ordered_floats_nested(arr);
+    
     
     // set the max dimension to compute persistent homology
     let dim = 1;
@@ -270,7 +338,7 @@ fn main() {
     // build and factor the filtered chain complex
     let chx = exhact::clique::CliqueComplex {
         // the distance/dissimilarity matrix
-        dissimilarity_matrix: dismat, 
+        dissimilarity_matrix: dismat.clone(), 
         // threshold to stop the filtration
         dissimilarity_value_max: maxdis, 
         // sets "safeguards" on dimension; we'll get warnings if we try to 
@@ -294,11 +362,31 @@ fn main() {
     for j in 2..3{//simplex_bar.len(){
         println!("{}", j);
         let birth = &simplex_bar[j].0;
+        //println!("{:?}",factored_complex.get_matched_basis_vector(1, birth));
+        
+
         let death = &simplex_bar[j].1;
         println!("{:?} birth" ,birth.clone());
         println!("{:?} death",death.clone());
-        let v = tri_opt(false,true, 1, SimplexWeights::Uniform, &factored_complex, birth, death);
-        //sols.push(v);
+        //uniform weight
+        println!("uniform weight");
+        let v = tri_opt(false,true, 1, |x| 1., &factored_complex, birth, death);
+        println!("Solution");
+        for (print_key, print_val) in v.iter() {
+            println!("{:?}" ,(print_key, print_val));
+        }
+        
+        // weight by area
+        println!("weight by area");
+        let v = tri_opt(false,true, 1, |x| volume(x, &dismat), &factored_complex, birth, death);
+        println!("Solution");
+        for (print_key, print_val) in v.iter() {
+            println!("{:?}" ,(print_key, print_val));
+        }
+        
+        
+
+
     }
 
 }

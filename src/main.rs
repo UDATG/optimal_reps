@@ -29,7 +29,7 @@ fn ordered_floats_nested(v: Vec<Vec<f64>>) -> Vec< Vec< OrderedFloat<f64> > > {
 
 pub enum SimplexWeights {
     Uniform,
-    Volume,
+    Area,
 }
 
 pub enum ProgramType {
