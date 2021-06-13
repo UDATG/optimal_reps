@@ -72,6 +72,8 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
                 obj_coef = vec![1.; 2 * size]; // c^T // 1 vector with length |Fn|
             }
         }
+        
+        // Set LP or MIP
         let int; 
         match is_int {
             ProgramType::LP => {
