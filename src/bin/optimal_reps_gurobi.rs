@@ -2,7 +2,7 @@ use exhact::matrix::{SmOracle, RingSpec, RingMetadata, MajorDimension};
 use exhact::cubical::{Cube, CubicalComplex};
 use exhact::chx::{ChainComplex, factor_chain_complex, ChxTransformKind,FactoredComplexBlockCsm};
 use exhact::clique::Simplex;
-use num::rational::Ratio;
+use num::Srational::Ratio;
 use std;
 extern crate gurobi;
 use gurobi::*;
@@ -218,6 +218,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
         // v- (death) = 0
         let mut constraint4 = LinExpr::new();
         let mut index_ctr4: usize = triangle_2_index.get(&death).unwrap().clone();
+        println!("{:?}",index_ctr4);
 
         // Set up the fourth kind of constraint
         // D_{n+1}[F_n,\hat{F}_{n+1}]v = 0
@@ -233,10 +234,12 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
         //model_neg.set_objective(obj_expression,Minimize).unwrap();
 
 
+
         model_pos.write("logfile.lp").unwrap();
         model_neg.write("logfile.lp").unwrap();
         model_pos.optimize().unwrap();
         model_neg.optimize().unwrap();
+
 
 
 
