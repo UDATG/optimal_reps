@@ -70,3 +70,43 @@ https://github.com/coin-or/Cbc
     cargo run --bin demo_rational 
     ```
 * If you want to compile/run a new example, say `demo_z5.rs`, then save `demo_z5.rs` to `src/bin` and follow the steps above.
+
+## Documentation for optimal_reps_gurobi.rs
+
+### functions 
+
+#### ordered_floats_nested: 
+set up ordered floats 
+
+#### ordered_floats_nested: 
+set up ordered floats 
+
+#### rational_to_float: 
+convert a rational to a floats
+
+#### getArea: 
+compute the diagonal entries in the weight matrix W used in Program 15 in the paper. 
+* The current version uses the heron formula to compute triangle area as weight
+* The input distance matrix may result in 'triangles' that violates the triangle inequality property, and thus prevents the successful use of the function. In this case, other weighting method or uniform weight should be recommended. For
+
+#### tri_opt:
+main function that optimize for a given homological feature
+* can choose between LP and MIP
+* can choose betweenn uniform weight and non uniform weight, which is currently obtained from area 
+* returns a hashmap that records edges in the optimized cycle representative and their corresponding coefficients
+
+## Example for tri_opt
+
+### MIP + uniform weight
+tri_opt(true, 1, |x| 1., &factored_complex, birth, death);
+
+### MIP +  weight by area
+tri_opt(true, 1, |x| getArea(x, &dismat), &factored_complex, birth, death);
+
+### LP + uniform weight
+tri_opt(false, 1, |x| 1., &factored_complex, birth, death);
+
+### LP +  weight by area
+tri_opt(false, 1, |x| getArea(x, &dismat), &factored_complex, birth, death);
+
+
