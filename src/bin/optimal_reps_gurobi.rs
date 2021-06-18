@@ -13,9 +13,6 @@ use std::io::{BufRead, BufReader};
 use std::hash::Hash;
 use optimal_representatives::simplex_bar::{simplex_barcode};
 use exhact::solver::multiply_hash_smoracle; // multiply a hashmap by a sparce matrix oracle
-use std::fmt::Debug;
-use std::ops::{Neg, AddAssign, Mul};
-use std::cmp::PartialEq;
 
 // must add the following line to dependencies under Cargo.toml:
 //      ordered-float = "2.0"
@@ -326,35 +323,6 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
 
 
 
-fn tri_opt_basis< 'a,MatrixIndexKey, Filtration, OriginalChx, Matrix,SnzVal, WeightFunction>(
-    simplex_bar: Vec<(MatrixIndexKey, MatrixIndexKey)>,
-    is_int: bool, 
-    dim: usize, 
-    weight: WeightFunction, 
-    SnzVal: Clone + std::cmp::PartialEq + Debug,
-    factored_complex: &FactoredComplexBlockCsm<'a, MatrixIndexKey, Coefficient, Filtration, OriginalChx>
-)  ->Vec<HashMap<MatrixIndexKey,f64>>  
-where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matrix=Matrix>,
-        MatrixIndexKey: std::cmp::PartialEq+ Eq + Clone + Hash + std::cmp::PartialOrd + Ord + std::fmt::Debug,
-        Matrix: SmOracle<MatrixIndexKey, MatrixIndexKey, Coefficient>,
-        Filtration: PartialOrd + Clone,
-        WeightFunction: Fn( &MatrixIndexKey ) -> f64
-{
-
-
-    let mut basis = Vec::new();
-
-    for j in 1..&simplex_bar.len(){
-        //println!("{}", j);
-        let birth = &simplex_bar[j].0;
-        let death = &simplex_bar[j].1;
-        let mut sol = tri_opt(is_int, dim, weight, &factored_complex, birth, death);
-        basis.push(sol);
-    }
-
-    return basis;
-}
-
 
 fn main() {    
     // read distance matrix
@@ -404,10 +372,8 @@ fn main() {
     // obtain a list of (birth_edge, death_triangle) pairs for the nonzero bars 
     let simplex_bar = simplex_barcode( &factored_complex, 1 );
     
-    
-
     // optimize for the second feature
-    for j in 2..3{//simplex_bar.len(){
+    for j in 2..3{
         let birth = &simplex_bar[j].0;
         //println!("{:?}",factored_complex.get_matched_basis_vector(1, birth));
         
@@ -430,37 +396,10 @@ fn main() {
         for (print_key, print_val) in solution_hash_edge.iter() {
             println!("{:?}" ,(print_key, print_val));
         }
-    }
-
-    println!("HERE6");
-
-    let mut basis_unif = Vec::new();
-    let mut basis_nonUnif = Vec::new();
-
-    for j in 1..simplex_bar.len(){
-        let birth = &simplex_bar[j].0;
-       
-
-        let death = &simplex_bar[j].1;
-
-        //uniform weight
-        println!("uniform weight");
-        let solution_hash_edge = tri_opt(true, 1, |x| 1., &factored_complex, birth, death);
-        println!("Solution");
-        for (print_key, print_val) in solution_hash_edge.iter() {
-            println!("{:?}" ,(print_key, print_val));
-        }
-        basis_unif.push(solution_hash_edge);
         
-        // weight by area
-        println!("weight by area");
-        let solution_hash_edge = tri_opt(true, 1, |x| getArea(x, &dismat), &factored_complex, birth, death);
-        println!("Solution");
-        for (print_key, print_val) in solution_hash_edge.iter() {
-            println!("{:?}" ,(print_key, print_val));
-        }
-        basis_nonUnif.push(solution_hash_edge);
-    
+        
+
+
     }
-    println!("HERE 7");
+
 }
