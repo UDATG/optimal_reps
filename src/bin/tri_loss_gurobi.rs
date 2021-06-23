@@ -13,6 +13,9 @@ use std::io::{BufRead, BufReader};
 use std::hash::Hash;
 use optimal_representatives::simplex_bar::{simplex_barcode};
 use exhact::solver::multiply_hash_smoracle; // multiply a hashmap by a sparce matrix oracle
+use ndarray::Array;
+use ndarray::array;
+use ndarray_npy::write_npy;
 
 // must add the following line to dependencies under Cargo.toml:
 //      ordered-float = "2.0"
@@ -66,13 +69,13 @@ fn getArea( simp: &Simplex<OrderedFloat<f64>>, dismat: &Vec<Vec<OrderedFloat<f64
  */
 
 fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
-(
-    is_int: bool, 
-    dim: usize, 
-    weight: WeightFunction, 
-    factored_complex: &FactoredComplexBlockCsm<'a, MatrixIndexKey, Coefficient, Filtration, OriginalChx>,
+(   factored_complex: &FactoredComplexBlockCsm<'a, MatrixIndexKey, Coefficient, Filtration, OriginalChx>,
     birth: &MatrixIndexKey, 
-    death: &MatrixIndexKey)
+    death: &MatrixIndexKey,
+    dim: usize, 
+    is_int: bool, 
+    weight: WeightFunction )
+    
     -> HashMap<MatrixIndexKey, f64> 
     where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matrix=Matrix>,
             MatrixIndexKey: PartialEq+ Eq + Clone + Hash + std::cmp::PartialOrd + Ord + std::fmt::Debug,
@@ -329,7 +332,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
 
 fn main() {    
     // read distance matrix
-    let mut f = BufReader::new(File::open("senate104_edge_list.txt_0.68902_distmat.txt").unwrap());
+    let mut f = BufReader::new(File::open("data_text\\dist_mat.txt").unwrap());
     let mut s = String::new();
 
      // for the input as Vec-of-Vec square symmetric matrix
@@ -374,31 +377,26 @@ fn main() {
     
     // obtain a list of (birth_edge, death_triangle) pairs for the nonzero bars 
     let simplex_bar = simplex_barcode( &factored_complex, 1 );
-    
+    println!("{}",simplex_bar.len());
     // optimize for the second feature
-    for j in 2..3{
+    for j in 18..19{
         let birth = &simplex_bar[j].0;
-        //println!("{:?}",factored_complex.get_matched_basis_vector(1, birth));
-        
-
         let death = &simplex_bar[j].1;
-        println!("{:?} birth" ,birth.clone());
-        println!("{:?} death",death.clone());
-        //uniform weight
-        println!("uniform weight");
-        let solution_hash_edge = tri_opt(true, 1, |x| 1., &factored_complex, birth, death);
-        println!("Solution");
+
+        // Write solution to npy
+        let solution_hash_edge = tri_opt(&factored_complex, birth,death, 1,true, |x| getArea(x, &dismat));
+        let mut vertices_sol_vec = Vec::new();
+        let mut coeff_sol_vec = Vec::new();
+
         for (print_key, print_val) in solution_hash_edge.iter() {
-            println!("{:?}" ,(print_key, print_val));
+            vertices_sol_vec.push(print_key.vertices[0]);
+            vertices_sol_vec.push(print_key.vertices[1]);
+            coeff_sol_vec.push(*print_val);
         }
-        
-        // weight by area
-        println!("weight by area");
-        let solution_hash_edge = tri_opt(true, 1, |x| getArea(x, &dismat), &factored_complex, birth, death);
-        println!("Solution");
-        for (print_key, print_val) in solution_hash_edge.iter() {
-            println!("{:?}" ,(print_key, print_val));
-        }
+        let vertices_sol_arr = Array::from_vec(vertices_sol_vec);
+        let coeff_sol_arr = Array::from_vec(coeff_sol_vec);
+        write_npy("npy_files/weighted_tri_answer_vertices.npy", &vertices_sol_arr);
+        write_npy("npy_files/weighted_tri_answer_coeffs.npy", &coeff_sol_arr);
         
         
 

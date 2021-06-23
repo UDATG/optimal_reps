@@ -298,7 +298,7 @@ fn main() {
     // obtain a list of (birth_edge, death_triangle) pairs for the nonzero bars 
     let simplex_bar = simplex_barcode( &factored_complex, 1 );
     
-    for j in 17..18{
+    for j in 18..19{
         let birth = &simplex_bar[j].0;
         let death = &simplex_bar[j].1;
 
@@ -314,23 +314,23 @@ fn main() {
         }
         let vertices_sol_arr = Array::from_vec(vertices_sol_vec);
         let coeff_sol_arr = Array::from_vec(coeff_sol_vec);
-        write_npy("npy_files/uniform_answer_vertices.npy", &vertices_sol_arr);
-        write_npy("npy_files/uniform_answer_coeffs.npy", &coeff_sol_arr);
+        write_npy("npy_files/uniform_edge_answer_vertices.npy", &vertices_sol_arr);
+        write_npy("npy_files/uniform_edge_answer_coeffs.npy", &coeff_sol_arr);
 
         // Write original basis to npy
-        let x_orig = factored_complex.get_matched_basis_vector(1, &birth);
-        let mut vertices_orig_vec = Vec::new();
-        let mut coeff_orig_vec: std::vec::Vec::<f64> = Vec::new();
+        // let x_orig = factored_complex.get_matched_basis_vector(1, &birth);
+        // let mut vertices_orig_vec = Vec::new();
+        // let mut coeff_orig_vec: std::vec::Vec::<f64> = Vec::new();
 
-        for (print_key, print_val) in x_orig.iter() {
-            vertices_orig_vec.push(print_key.vertices[0]);
-            vertices_orig_vec.push(print_key.vertices[1]);
-            coeff_orig_vec.push((print_val.numer()/print_val.denom()).into());
-        }
-        let vertices_orig_arr = Array::from_vec(vertices_orig_vec);
-        let coeff_orig_arr = Array::from_vec(coeff_orig_vec);
-        write_npy("npy_files/orig_vertices.npy", &vertices_orig_arr);
-        write_npy("npy_files/orig_coeffs.npy", &coeff_orig_arr);
+        // for (print_key, print_val) in x_orig.iter() {
+        //     vertices_orig_vec.push(print_key.vertices[0]);
+        //     vertices_orig_vec.push(print_key.vertices[1]);
+        //     coeff_orig_vec.push((print_val.numer()/print_val.denom()).into());
+        // }
+        // let vertices_orig_arr = Array::from_vec(vertices_orig_vec);
+        // let coeff_orig_arr = Array::from_vec(coeff_orig_vec);
+        // write_npy("npy_files/orig_vertices.npy", &vertices_orig_arr);
+        // write_npy("npy_files/orig_coeffs.npy", &coeff_orig_arr);
     }
 }
 
