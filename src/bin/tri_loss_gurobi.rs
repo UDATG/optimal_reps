@@ -2,7 +2,7 @@ use exhact::matrix::{SmOracle, RingSpec, RingMetadata, MajorDimension};
 use exhact::cubical::{Cube, CubicalComplex};
 use exhact::chx::{ChainComplex, factor_chain_complex, ChxTransformKind,FactoredComplexBlockCsm};
 use exhact::clique::Simplex;
-use num::Srational::Ratio;
+use num::rational::Ratio;
 use std;
 extern crate gurobi;
 use gurobi::*;
@@ -39,7 +39,7 @@ fn getArea( simp: &Simplex<OrderedFloat<f64>>, dismat: &Vec<Vec<OrderedFloat<f64
     
    let a = f64::from(dismat[simp.vertices[0] as usize][simp.vertices[1] as usize]);
    let b = f64::from(dismat[simp.vertices[0] as usize][simp.vertices[2] as usize]);
-   let c = f64::from(dismat[simp.vertices[1] as usize][simp.vertices[0] as usize]);
+   let c = f64::from(dismat[simp.vertices[1] as usize][simp.vertices[2] as usize]); // bug?
    let s = (a + b + c)/2.;
    let t = s*(s-a)*(s-b)*(s-c);
    if t<0.{
@@ -321,7 +321,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
             }
 
         }
-        return solution_hash_edge
+        return solution_hash_edge;
 }
 
 
