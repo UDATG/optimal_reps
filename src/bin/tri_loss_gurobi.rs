@@ -152,17 +152,17 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
             let mut str_name = &name[..];
             // set up for variables in model_pos and model_neg
             // variable range: 0-INFINITY
-            v_neg.push(model_pos.add_var(str_name, program_type, weight(index_2_triangle.get(&i).unwrap()), 0.0, INFINITY, &[], &[]).unwrap());
-            v_neg.push(model_neg.add_var(str_name, program_type, weight(index_2_triangle.get(&i).unwrap()), 0.0, INFINITY, &[], &[]).unwrap());
+            v_neg.push(model_pos.add_var(str_name, program_type, 1.0, 0.0, INFINITY, &[], &[]).unwrap());
+            v_neg.push(model_neg.add_var(str_name, program_type, 1.0, 0.0, INFINITY, &[], &[]).unwrap());
         }
         
         // Set objective function
         let mut obj_expression: LinExpr = LinExpr::new();
         for i in 0..size{    
-            obj_expression = obj_expression.add_term(1.0, v_pos[i].clone());
+            obj_expression = obj_expression.add_term(weight(index_2_triangle.get(&i).unwrap()), v_pos[i].clone());
         }
         for i in 0..size{    
-            obj_expression = obj_expression.add_term(1.0, v_neg[i].clone());
+            obj_expression = obj_expression.add_term(weight(index_2_triangle.get(&i).unwrap()), v_neg[i].clone());
         }
       
 

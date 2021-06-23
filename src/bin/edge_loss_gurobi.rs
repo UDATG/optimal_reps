@@ -51,40 +51,50 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
             Filtration: PartialOrd + Clone ,
             WeightFunction: Fn( &MatrixIndexKey ) -> f64
 {
-
-    let chx = &factored_complex.original_complex;
     let i = dim;
+    let chx = &factored_complex.original_complex;
+    let indexing_vec = &factored_complex.dim_indexing;
+    let indexing = &indexing_vec[dim+1];
+    let index_2_majkey = &indexing.index_2_majkey;
+    let index_2_minkey = &indexing.index_2_minkey;
+
+
     let env = Env::new("logfile.log").unwrap();
     let mut model = env.new_model("model1").unwrap();
-
 
 
     let good_edges: Vec<_> = chx.keys_unordered_itr(i).filter(|s| s <= &birth).collect();
     let mut good_triangles:Vec<_> = Vec::new();
     
-    
-    let simplex_bar = simplex_barcode( &factored_complex, 1 );
-    let barcode_length = simplex_bar.len();
 
     // Build matrix A and good triangles at the same time
     let mut A = Vec::new();
-    for bar_index in 0..barcode_length{
-        let  barcode_birth = &simplex_bar[bar_index].0;
-        let  barcode_death = &simplex_bar[bar_index].1;
-
-        // Build good triangle
-        if barcode_death <= birth{
-            good_triangles.push(barcode_death);
-        }
+    for bar_index in 0..index_2_majkey.len(){
+        // get the row and column index of each pivot element
+        let mut index_birth = index_2_majkey[bar_index].clone(); // birth row/edge
+        let mut index_death = index_2_minkey[bar_index].clone(); // death col/triangle
         
-        // Build matrix A
-        if barcode_birth <= birth && barcode_death <= death{
-            A.push(factored_complex.get_matched_basis_vector(1, &barcode_birth));
+        // if the pivot has birth and death times earlier than those of the optimized cycle ..
+        if &index_birth < birth && &index_death <= death
+        {
+            // add the column index to the set of "good triangles," provided the pivot has equal birth and death times
+            if chx.key_2_filtration( &index_birth ) == chx.key_2_filtration( &index_death )
+            {
+                good_triangles.push(index_death.clone());
+            }
+            // otherwise append a column to A        
+            else
+            {
+                A.push(factored_complex.get_matched_basis_vector(1, &index_birth));
+            }
         }
     }
+   
+
     let edge_size = good_edges.len();
     let triangle_size = good_triangles.len();
     let column_size_of_a = A.len(); 
+    println!("{:?}",triangle_size);
 
     // Set program type
     let  mut program_type = Integer;
@@ -174,13 +184,11 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
    
 
     // Build Hashmap to record the index of the triangles
-    let mut triangle_2_index: HashMap<&MatrixIndexKey, usize> = HashMap::new();       
-    let mut index_2_triangle: HashMap<usize, &MatrixIndexKey> = HashMap::new();       
+    let mut triangle_2_index: HashMap<MatrixIndexKey, usize> = HashMap::new();       
+    let mut index_2_triangle: HashMap<usize, MatrixIndexKey> = HashMap::new();       
     // initialize indices to be 0   
     let mut tri_index:usize = 0;
     
-    // How do we build good_triangles?
-
 
     for triangle in good_triangles.iter() { // for each column
         if !triangle_2_index.contains_key(triangle) {
@@ -298,27 +306,30 @@ fn main() {
     // obtain a list of (birth_edge, death_triangle) pairs for the nonzero bars 
     let simplex_bar = simplex_barcode( &factored_complex, 1 );
     
-    for j in 18..19{
+    for j in 0..simplex_bar.len(){
         let birth = &simplex_bar[j].0;
         let death = &simplex_bar[j].1;
+        println!("birth: {:?} \t",&birth);
+        println!("death:{:?} \n",&death);
 
         // Write solution to npy
-        let solution_hash_edge = edge_opt(&factored_complex, birth,death, 1,true, |x| 1.0);
-        let mut vertices_sol_vec = Vec::new();
-        let mut coeff_sol_vec = Vec::new();
+        // let solution_hash_edge = edge_opt(&factored_complex, birth,death, 1,false, |x| 1.0);
+        // let mut vertices_sol_vec = Vec::new();
+        // let mut coeff_sol_vec = Vec::new();
 
-        for (print_key, print_val) in solution_hash_edge.iter() {
-            vertices_sol_vec.push(print_key.vertices[0]);
-            vertices_sol_vec.push(print_key.vertices[1]);
-            coeff_sol_vec.push(*print_val);
-        }
-        let vertices_sol_arr = Array::from_vec(vertices_sol_vec);
-        let coeff_sol_arr = Array::from_vec(coeff_sol_vec);
-        write_npy("npy_files/uniform_edge_answer_vertices.npy", &vertices_sol_arr);
-        write_npy("npy_files/uniform_edge_answer_coeffs.npy", &coeff_sol_arr);
+        // for (print_key, print_val) in solution_hash_edge.iter() {
+        //     vertices_sol_vec.push(print_key.vertices[0]);
+        //     vertices_sol_vec.push(print_key.vertices[1]);
+        //     coeff_sol_vec.push(*print_val);
+        // }
+        // let vertices_sol_arr = Array::from_vec(vertices_sol_vec);
+        // let coeff_sol_arr = Array::from_vec(coeff_sol_vec);
+        // write_npy("npy_file_cycle_2_new/uniform_edge_answer_vertices.npy", &vertices_sol_arr);
+        // write_npy("npy_file_cycle_2_new/uniform_edge_answer_coeffs.npy", &coeff_sol_arr);
 
-        // Write original basis to npy
+        // // Write original basis to npy
         // let x_orig = factored_complex.get_matched_basis_vector(1, &birth);
+        
         // let mut vertices_orig_vec = Vec::new();
         // let mut coeff_orig_vec: std::vec::Vec::<f64> = Vec::new();
 
@@ -329,8 +340,9 @@ fn main() {
         // }
         // let vertices_orig_arr = Array::from_vec(vertices_orig_vec);
         // let coeff_orig_arr = Array::from_vec(coeff_orig_vec);
-        // write_npy("npy_files/orig_vertices.npy", &vertices_orig_arr);
-        // write_npy("npy_files/orig_coeffs.npy", &coeff_orig_arr);
+
+        // write_npy("npy_file_cycle_2_new/orig_vertices.npy", &vertices_orig_arr);
+        // write_npy("npy_file_cycle_2_new/orig_coeffs.npy", &coeff_orig_arr);
     }
 }
 
