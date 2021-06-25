@@ -71,7 +71,46 @@ https://github.com/coin-or/Cbc
     ```
 * If you want to compile/run a new example, say `demo_z5.rs`, then save `demo_z5.rs` to `src/bin` and follow the steps above.
 
-## Documentation for optimal_reps_gurobi.rs
+## Documentation for edge_loss_gurobi.rs
+ 
+ * This is an implementation of the edge loss method of the optimization of cycle representative. 
+
+### functions
+
+#### ordered_floats_nested: 
+set up ordered floats 
+
+#### ordered_floats_nested: 
+set up ordered floats 
+
+#### rational_to_float: 
+convert a rational to a floats
+
+#### getLength: 
+compute the diagonal entries in the weight matrix W used in Program 15 in the paper. 
+
+Parameters:
+* simp: The simplex we are interested in
+* dismat: The distance matrix we use to get the weight of the simplex
+
+Output:
+An f64 type of number that represents the weight 
+
+#### tri_opt:
+main function that optimize for a given homological feature
+
+Parameters:
+* factored_complex: The factored complex of the homology groups. It is an object defined in the exhact library.
+* birth: The birth time of the cycle to be optimized. It is represented as a MatrixIndexKey, which is the representation a simplex.
+* death: The death time of the cycle to be optimized. It is represented as a MatrixIndexKey, which is the representation a simplex.
+* dim: The dimension of the cycle 
+* is_int: The parameter that decides whether the vector should be integral coefficient or rational coefficient.
+* weight: A weight function defined for the objective function.
+
+Output:
+* A hashmap representation of the optimized cycle representative. The key of the hashmap is a MatrixIndexKey. The value of the hashmap is the coefficient.
+
+## Documentation for tri_loss_gurobi.rs
 
 ### functions 
 
@@ -87,13 +126,31 @@ convert a rational to a floats
 #### getArea: 
 compute the diagonal entries in the weight matrix W used in Program 15 in the paper. 
 * The current version uses the heron formula to compute triangle area as weight
-* The input distance matrix may result in 'triangles' that violates the triangle inequality property, and thus prevents the successful use of the function. In this case, other weighting method or uniform weight should be recommended. For
+* The input distance matrix may result in 'triangles' that violates the triangle inequality property, and thus prevents the successful use of the function. In this case, other weighting method or uniform weight should be recommended. 
+
+Parameters:
+* simp: The simplex we are interested in
+* dismat: The distance matrix we use to get the weight of the simplex
+
+Output:
+An f64 type of number that represents the weight 
 
 #### tri_opt:
 main function that optimize for a given homological feature
 * can choose between LP and MIP
 * can choose betweenn uniform weight and non uniform weight, which is currently obtained from area 
 * returns a hashmap that records edges in the optimized cycle representative and their corresponding coefficients
+
+Parameters:
+* factored_complex: The factored complex of the homology groups. It is an object defined in the exhact library.
+* birth: The birth time of the cycle to be optimized. It is represented as a MatrixIndexKey, which is the representation a simplex.
+* death: The death time of the cycle to be optimized. It is represented as a MatrixIndexKey, which is the representation a simplex.
+* dim: The dimension of the cycle 
+* is_int: The parameter that decides whether the vector should be integral coefficient or rational coefficient.
+* weight: A weight function defined for the objective function.
+
+Output:
+* A hashmap representation of the optimized cycle representative. The key of the hashmap is a MatrixIndexKey. The value of the hashmap is the coefficient.
 
 ## Example for tri_opt
 
