@@ -180,7 +180,7 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
         let  name = format!("{}{}", "x_neg", i);
 
         let  str_name = &name[..];
-        x_neg.push(model.add_var(str_name, program_type, 1.0, 0.0, INFINITY, &[], &[]).unwrap());
+        x_neg.push(model.add_var(str_name, program_type, weight(index_2_edge.get(&i).unwrap()), 0.0, INFINITY, &[], &[]).unwrap());
     }
 
     // initialize the vector: p 
@@ -191,7 +191,7 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
         let  name = format!("{}{}", "p", i);
 
         let  str_name = &name[..];
-        p.push(model.add_var(str_name, program_type, 0.0, -INFINITY, INFINITY, &[], &[]).unwrap());
+        p.push(model.add_var(str_name, program_type, 0.0, 0.0, INFINITY, &[], &[]).unwrap());
     }
 
     // initialize the vector: q
@@ -202,7 +202,7 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
         let  name = format!("{}{}", "q", i);
 
         let  str_name = &name[..];
-        q.push(model.add_var(str_name, program_type, 0.0, -INFINITY, INFINITY, &[], &[]).unwrap());
+        q.push(model.add_var(str_name, program_type, 0.0, 0.0, INFINITY, &[], &[]).unwrap());
     }
 
     // Set objective function
@@ -210,13 +210,13 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
         
     for i in 0..edge_size{    
         
-        obj_expression = obj_expression.add_term(weight(index_2_edge.get(&i).unwrap()), x_pos[i].clone());
+        obj_expression = obj_expression.add_term(1.0, x_pos[i].clone());
 
     }
 
     for i in 0..edge_size{    
         
-        obj_expression = obj_expression.add_term(weight(index_2_edge.get(&i).unwrap()), x_neg[i].clone());
+        obj_expression = obj_expression.add_term(1.0, x_neg[i].clone());
 
     }
     
