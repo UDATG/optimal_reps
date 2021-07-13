@@ -68,7 +68,7 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix>
             SimplexWeights::Uniform => {
                 obj_coef = vec![1.; 2 * size]; // c^T // 1 vector with length |Fn|
             }
-            SimplexWeights::Volume => {
+            SimplexWeights::Area => {
                 obj_coef = vec![1.; 2 * size]; // c^T // 1 vector with length |Fn|
             }
         }

@@ -363,8 +363,9 @@ fn main() {
     // obtain a list of (birth_edge, death_triangle) pairs for the nonzero bars 
     let simplex_bar = simplex_barcode( &factored_complex, 1 );
     
-    
-    for j in 0..simplex_bar.len(){
+    let cycle_index = 0;
+
+    for j in cycle_index..cycle_index+1{
         let birth = &simplex_bar[j].0;
         let death = &simplex_bar[j].1;
         // println!("birth: {:?} death: {:?}",birth,death);

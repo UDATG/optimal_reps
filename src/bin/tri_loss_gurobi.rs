@@ -138,22 +138,22 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
         // set up the vector: v+
         let mut v_pos = Vec::new();
         for i in 0..size{
-            let mut name = format!("{}{}", "x_pos", i);
+            let mut name = format!("{}{}", "v_pos", i);
             let mut str_name = &name[..];
             // set up for variables in model_pos and model_neg
             // variable range: 0-INFINITY
-            v_pos.push(model_pos.add_var(str_name, program_type, weight(index_2_triangle.get(&i).unwrap()), 0.0, INFINITY, &[], &[]).unwrap());
-            v_pos.push(model_neg.add_var(str_name, program_type, weight(index_2_triangle.get(&i).unwrap()), 0.0, INFINITY, &[], &[]).unwrap());
+            v_pos.push(model_pos.add_var(str_name, program_type, 1.0, 0.0, INFINITY, &[], &[]).unwrap());
+            v_pos.push(model_neg.add_var(str_name, program_type, 1.0, 0.0, INFINITY, &[], &[]).unwrap());
         }
         // set the vector: v-
         let mut v_neg = Vec::new();
         for i in 0..size{
-            let mut name = format!("{}{}", "x_neg", i);
+            let mut name = format!("{}{}", "v_neg", i);
             let mut str_name = &name[..];
             // set up for variables in model_pos and model_neg
             // variable range: 0-INFINITY
-            v_neg.push(model_pos.add_var(str_name, program_type, 1.0, 0.0, INFINITY, &[], &[]).unwrap());
-            v_neg.push(model_neg.add_var(str_name, program_type, 1.0, 0.0, INFINITY, &[], &[]).unwrap());
+            v_neg.push(model_pos.add_var(str_name, program_type,1.0, 0.0, INFINITY, &[], &[]).unwrap());
+            v_neg.push(model_neg.add_var(str_name, program_type,1.0, 0.0, INFINITY, &[], &[]).unwrap());
         }
         
         // Set objective function
@@ -192,6 +192,8 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
         // set constraintSense to be either greater or less than 0
         model_pos.add_constr("constraint1", constraint1.clone(), Greater, 0.0);
         model_neg.add_constr("constraint1", constraint1.clone(), Less, 0.0);
+        model_pos.update().unwrap();
+        model_neg.update().unwrap();
 
         //Set up the second kind of constraint
         // D_{n+1}[F_n,\hat{F}_{n+1}] v == 0 
@@ -208,9 +210,11 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
             }
             model_pos.add_constr("constraint2", constraint2.clone(), Equal, 0.0);
             model_neg.add_constr("constraint2", constraint2.clone(), Equal, 0.0);
-
+            model_pos.update().unwrap();
+            model_neg.update().unwrap();
+            
         }
-
+        
         // Set up the third kind of constraint
         // v+ (death) = 1
         let mut constraint3 = LinExpr::new();
@@ -221,7 +225,9 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
         // v- (death) = 0
         let mut constraint4 = LinExpr::new();
         let mut index_ctr4: usize = triangle_2_index.get(&death).unwrap().clone();
-        println!("{:?}",index_ctr4);
+        
+        model_pos.update().unwrap();
+        model_neg.update().unwrap();
 
         // Set up the fourth kind of constraint
         // D_{n+1}[F_n,\hat{F}_{n+1}]v = 0
@@ -233,13 +239,14 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
         model_pos.update().unwrap();
         model_neg.update().unwrap();
         // add objective function to model_pos
-        //model_pos.set_objective(obj_expression,Minimize).unwrap();
-        //model_neg.set_objective(obj_expression,Minimize).unwrap();
+        model_pos.set_objective(obj_expression.clone(),Minimize).unwrap();
+        model_neg.set_objective(obj_expression.clone(),Minimize).unwrap();
+        model_pos.update().unwrap();
+        model_neg.update().unwrap();
 
 
-
-        model_pos.write("logfile.lp").unwrap();
-        model_neg.write("logfile.lp").unwrap();
+        model_pos.write("logfile_tri_loss_pos.lp").unwrap();
+        model_neg.write("logfile_tri_loss_neg.lp").unwrap();
         model_pos.optimize().unwrap();
         model_neg.optimize().unwrap();
 
@@ -377,14 +384,14 @@ fn main() {
     
     // obtain a list of (birth_edge, death_triangle) pairs for the nonzero bars 
     let simplex_bar = simplex_barcode( &factored_complex, 1 );
-    println!("{}",simplex_bar.len());
+    
     // optimize for the second feature
-    for j in 18..19{
+    for j in 2..3{
         let birth = &simplex_bar[j].0;
         let death = &simplex_bar[j].1;
 
         // Write solution to npy
-        let solution_hash_edge = tri_opt(&factored_complex, birth,death, 1,true, |x| getArea(x, &dismat));
+        let solution_hash_edge = tri_opt(&factored_complex, birth,death, 1,true, |x| 1.0);
         let mut vertices_sol_vec = Vec::new();
         let mut coeff_sol_vec = Vec::new();
 
@@ -395,10 +402,10 @@ fn main() {
         }
         let vertices_sol_arr = Array::from_vec(vertices_sol_vec);
         let coeff_sol_arr = Array::from_vec(coeff_sol_vec);
-        write_npy("npy_files/weighted_tri_answer_vertices.npy", &vertices_sol_arr);
-        write_npy("npy_files/weighted_tri_answer_coeffs.npy", &coeff_sol_arr);
+        write_npy("npy_files_dist_mat_cycle_2/uniform_tri_answer_vertices.npy", &vertices_sol_arr);
+        write_npy("npy_files_dist_mat_cycle_2/uniform_tri_answer_coeffs.npy", &coeff_sol_arr);
         
-        
+        println!("finished");
 
 
     }
