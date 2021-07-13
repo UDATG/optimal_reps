@@ -125,7 +125,7 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
         let  name = format!("{}{}", "x_pos", i);
 
         let  str_name = &name[..];
-        x_pos.push(model.add_var(str_name, program_type,1.0, 0.0, INFINITY, &[], &[]).unwrap());
+        x_pos.push(model.add_var(str_name, program_type,weight(index_2_edge.get(&i).unwrap()), 0.0, INFINITY, &[], &[]).unwrap());
     }
 
     // initialize the vector: x-
@@ -136,7 +136,7 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
         let  name = format!("{}{}", "x_neg", i);
 
         let  str_name = &name[..];
-        x_neg.push(model.add_var(str_name, program_type, 1.0, 0.0, INFINITY, &[], &[]).unwrap());
+        x_neg.push(model.add_var(str_name, program_type, weight(index_2_edge.get(&i).unwrap()), 0.0, INFINITY, &[], &[]).unwrap());
     }
 
     // initialize the vector: p 
@@ -147,7 +147,7 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
         let  name = format!("{}{}", "p", i);
 
         let  str_name = &name[..];
-        p.push(model.add_var(str_name, program_type, 1.0, 0.0, INFINITY, &[], &[]).unwrap());
+        p.push(model.add_var(str_name, program_type, 0.0, 0.0, INFINITY, &[], &[]).unwrap());
     }
 
     // initialize the vector: q
@@ -158,7 +158,7 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
         let  name = format!("{}{}", "q", i);
 
         let  str_name = &name[..];
-        q.push(model.add_var(str_name, program_type, 1.0, 0.0, INFINITY, &[], &[]).unwrap());
+        q.push(model.add_var(str_name, program_type, 0.0, 0.0, INFINITY, &[], &[]).unwrap());
     }
 
     // Set objective function
@@ -166,13 +166,13 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
         
     for i in 0..edge_size{    
         
-        obj_expression = obj_expression.add_term(weight(index_2_edge.get(&i).unwrap()), x_pos[i].clone());
+        obj_expression = obj_expression.add_term(1.0, x_pos[i].clone());
 
     }
 
     for i in 0..edge_size{    
         
-        obj_expression = obj_expression.add_term(weight(index_2_edge.get(&i).unwrap()), x_neg[i].clone());
+        obj_expression = obj_expression.add_term(1.0, x_neg[i].clone());
 
     }
     
@@ -306,43 +306,42 @@ fn main() {
     // obtain a list of (birth_edge, death_triangle) pairs for the nonzero bars 
     let simplex_bar = simplex_barcode( &factored_complex, 1 );
     
-    for j in 0..simplex_bar.len(){
+    for j in 2..3{
         let birth = &simplex_bar[j].0;
         let death = &simplex_bar[j].1;
-        println!("birth: {:?} \t",&birth);
-        println!("death:{:?} \n",&death);
+        
 
         // Write solution to npy
-        // let solution_hash_edge = edge_opt(&factored_complex, birth,death, 1,false, |x| 1.0);
-        // let mut vertices_sol_vec = Vec::new();
-        // let mut coeff_sol_vec = Vec::new();
+        let solution_hash_edge = edge_opt(&factored_complex, birth,death, 1,false, |x| 1.0);
+        let mut vertices_sol_vec = Vec::new();
+        let mut coeff_sol_vec = Vec::new();
 
-        // for (print_key, print_val) in solution_hash_edge.iter() {
-        //     vertices_sol_vec.push(print_key.vertices[0]);
-        //     vertices_sol_vec.push(print_key.vertices[1]);
-        //     coeff_sol_vec.push(*print_val);
-        // }
-        // let vertices_sol_arr = Array::from_vec(vertices_sol_vec);
-        // let coeff_sol_arr = Array::from_vec(coeff_sol_vec);
-        // write_npy("npy_file_cycle_2_new/uniform_edge_answer_vertices.npy", &vertices_sol_arr);
-        // write_npy("npy_file_cycle_2_new/uniform_edge_answer_coeffs.npy", &coeff_sol_arr);
+        for (print_key, print_val) in solution_hash_edge.iter() {
+            vertices_sol_vec.push(print_key.vertices[0]);
+            vertices_sol_vec.push(print_key.vertices[1]);
+            coeff_sol_vec.push(*print_val);
+        }
+        let vertices_sol_arr = Array::from_vec(vertices_sol_vec);
+        let coeff_sol_arr = Array::from_vec(coeff_sol_vec);
+        write_npy("npy_file_cycle_2_new/uniform_edge_answer_vertices.npy", &vertices_sol_arr);
+        write_npy("npy_file_cycle_2_new/uniform_edge_answer_coeffs.npy", &coeff_sol_arr);
 
-        // // Write original basis to npy
-        // let x_orig = factored_complex.get_matched_basis_vector(1, &birth);
+        // Write original basis to npy
+        let x_orig = factored_complex.get_matched_basis_vector(1, &birth);
         
-        // let mut vertices_orig_vec = Vec::new();
-        // let mut coeff_orig_vec: std::vec::Vec::<f64> = Vec::new();
+        let mut vertices_orig_vec = Vec::new();
+        let mut coeff_orig_vec: std::vec::Vec::<f64> = Vec::new();
 
-        // for (print_key, print_val) in x_orig.iter() {
-        //     vertices_orig_vec.push(print_key.vertices[0]);
-        //     vertices_orig_vec.push(print_key.vertices[1]);
-        //     coeff_orig_vec.push((print_val.numer()/print_val.denom()).into());
-        // }
-        // let vertices_orig_arr = Array::from_vec(vertices_orig_vec);
-        // let coeff_orig_arr = Array::from_vec(coeff_orig_vec);
+        for (print_key, print_val) in x_orig.iter() {
+            vertices_orig_vec.push(print_key.vertices[0]);
+            vertices_orig_vec.push(print_key.vertices[1]);
+            coeff_orig_vec.push((print_val.numer()/print_val.denom()).into());
+        }
+        let vertices_orig_arr = Array::from_vec(vertices_orig_vec);
+        let coeff_orig_arr = Array::from_vec(coeff_orig_vec);
 
-        // write_npy("npy_file_cycle_2_new/orig_vertices.npy", &vertices_orig_arr);
-        // write_npy("npy_file_cycle_2_new/orig_coeffs.npy", &coeff_orig_arr);
+        write_npy("npy_file_cycle_2_new/orig_vertices.npy", &vertices_orig_arr);
+        write_npy("npy_file_cycle_2_new/orig_coeffs.npy", &coeff_orig_arr);
     }
 }
 
