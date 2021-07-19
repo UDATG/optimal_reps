@@ -363,18 +363,19 @@ fn main() {
     // obtain a list of (birth_edge, death_triangle) pairs for the nonzero bars 
     let simplex_bar = simplex_barcode( &factored_complex, 1 );
     
-    let cycle_index = 0;
+    let cycle_index = 2;
 
     for j in cycle_index..cycle_index+1{
         let birth = &simplex_bar[j].0;
         let death = &simplex_bar[j].1;
         // println!("birth: {:?} death: {:?}",birth,death);
         // Write solution to npy
-    
+        
+
         let solution_hash_edge = edge_opt(&factored_complex, birth,death, 1,false, |x| getLength(x, &dismat));
         let mut vertices_sol_vec = Vec::new();
         let mut coeff_sol_vec = Vec::new();
-        // println!("weight {:?}",solution_hash_edge);
+        // println!("solution {:?}",solution_hash_edge);
 
         for (print_key, print_val) in solution_hash_edge.iter() {
             vertices_sol_vec.push(print_key.vertices[0]);

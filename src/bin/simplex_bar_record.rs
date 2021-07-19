@@ -74,7 +74,8 @@ fn main() {
     
     let factored_complex = exhact::chx::factor_chain_complex(&chx, dim+1);
 
-    
+    let mut birth_vec: Vec<f64> = Vec::new();
+    let mut death_vec: Vec<f64> = Vec::new();
 
     // obtain a list of (birth_edge, death_triangle) pairs for the nonzero bars 
     let simplex_bar = simplex_barcode( &factored_complex, 1 );
@@ -82,10 +83,13 @@ fn main() {
         let birth = &simplex_bar[j].0;
         let death = &simplex_bar[j].1;
         
-
-        println!("{:?}",birth.vertices[0]);
+        birth_vec.push(chx.key_2_filtration(&birth).into());
+        death_vec.push(chx.key_2_filtration(&death).into());
     }
 
+    let birth_arr = Array::from_vec(birth_vec);
+    let death_arr = Array::from_vec(death_vec);
 
-
+    write_npy("simplex_bar/birth_time.npy", &birth_arr);
+    write_npy("simplex_bar/death_time.npy", &death_arr);
 }

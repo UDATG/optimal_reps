@@ -380,25 +380,29 @@ fn main() {
     
     // obtain a list of (birth_edge, death_triangle) pairs for the nonzero bars 
     let simplex_bar = simplex_barcode( &factored_complex, 1 );
-    
-    for j in 0..simplex_bar.len(){
+    let cycle_index = 2;
+
+    for j in cycle_index..cycle_index+1{
         let birth = &simplex_bar[j].0;
         let death = &simplex_bar[j].1;
         // println!("birth: {:?} death: {:?}",birth,death);
         // Write solution to npy
         
-        let solution_hash_tri = tri_opt(&factored_complex, birth,death, 1,false,true, |x| getArea(&x, &dismat));
-        
+        let solution_hash_tri = tri_opt(&factored_complex, birth,death, 1,true,false, |x| getArea(&x, &dismat));
+
+
 
         let mut vertices_sol_vec = Vec::new();
         let mut coeff_sol_vec = Vec::new();
-        // println!("weight {:?}",solution_hash_tri);
-
+        // let mut sum:f64 = 0.0;
         for (print_key, print_val) in solution_hash_tri.iter() {
             vertices_sol_vec.push(print_key.vertices[0]);
             vertices_sol_vec.push(print_key.vertices[1]);
             coeff_sol_vec.push(*print_val);
+
+            // sum += chx.key_2_filtration(&print_key).into_inner();
         }
+        // println!("sum : {:?}",sum);
 
         let vertices_sol_arr = Array::from_vec(vertices_sol_vec);
         let coeff_sol_arr = Array::from_vec(coeff_sol_vec);

@@ -168,7 +168,6 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
         let  name = format!("{}{}", "x_pos", i);
 
         let  str_name = &name[..];
-        // Should put weight in objective function because we don't want weight in constraint
         x_pos.push(model.add_var(str_name, program_type,1.0, 0.0, INFINITY, &[], &[]).unwrap());
     }
 
@@ -180,7 +179,7 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
         let  name = format!("{}{}", "x_neg", i);
 
         let  str_name = &name[..];
-        x_neg.push(model.add_var(str_name, program_type, weight(index_2_edge.get(&i).unwrap()), 0.0, INFINITY, &[], &[]).unwrap());
+        x_neg.push(model.add_var(str_name, program_type, 1.0 , 0.0, INFINITY, &[], &[]).unwrap());
     }
 
     // initialize the vector: p 
@@ -210,13 +209,13 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
         
     for i in 0..edge_size{    
         
-        obj_expression = obj_expression.add_term(1.0, x_pos[i].clone());
+        obj_expression = obj_expression.add_term(weight(index_2_edge.get(&i).unwrap()), x_pos[i].clone());
 
     }
 
     for i in 0..edge_size{    
         
-        obj_expression = obj_expression.add_term(1.0, x_neg[i].clone());
+        obj_expression = obj_expression.add_term(weight(index_2_edge.get(&i).unwrap()), x_neg[i].clone());
 
     }
     
@@ -312,7 +311,7 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
 
 
 fn main() {  
-    let mut f = BufReader::new(File::open("data_text\\dist_mat.txt").unwrap());
+    let mut f = BufReader::new(File::open("data_text\\debug_example_2.txt").unwrap());
     let mut s = String::new();
 
      // for the input as Vec-of-Vec square symmetric matrix
@@ -363,7 +362,7 @@ fn main() {
     // obtain a list of (birth_edge, death_triangle) pairs for the nonzero bars 
     let simplex_bar = simplex_barcode( &factored_complex, 1 );
     
-    
+    println!("lrngth:{:?}",simplex_bar.len());
     for j in 0..simplex_bar.len(){
         let birth = &simplex_bar[j].0;
         let death = &simplex_bar[j].1;
