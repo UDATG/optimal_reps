@@ -1,6 +1,10 @@
 # optimal_reps
 Optimal cycle representatives
 
+## User guide
+
+`https://colab.research.google.com/drive/1B-5bI4N168__TsaTGXESgh4p_K7g90Af#scrollTo=TyTh4kFSp61g`
+
 ## Installing CBC
 `brew tap coin-or-tools/coinorbrew`
 
