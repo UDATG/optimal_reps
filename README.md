@@ -1,9 +1,9 @@
 # Optimal cycle representatives
 
-This is a rust library for computing optimal cycle representatives.
+This is a rust library for computing optimal cycle representatives using a linear solver called Gurobi.
 
-## User guide
-To use this github repository, you need to install many dependencies first. Below we give some instructions on how to install all the needed dependencies.
+# User guide
+To use this github repository, you first need to download the code to your computer. You can do that by clicking on the green "code" button and choose "Download ZIP". Unzip the downloaded zip file. Then, you need to install many dependencies. Below we give some instructions on how to install all the needed dependencies.
 
 <!--- 
 ## Installing CBC
@@ -14,7 +14,30 @@ To use this github repository, you need to install many dependencies first. Belo
 https://github.com/coin-or/Cbc
 --->
 
-## Installing Gurobi
+## Install Rust
+
+### Windows
+
+Go to https://www.rust-lang.org/learn/get-started. Download the correct version of the installer for your computer. Run the installer and follow the onscreen instructions. You may need to install the Visual Studio C++ Build tools when prompted to do so.
+
+### Mac (need help)
+
+## Install Exhact
+
+Go to https://github.com/UDATG/exhact_rust/tree/devel_haibin_comments. Download the code by clicking on the green "code" button and choose "Download ZIP". Unzip the downloaded zip file. Then, open the Cargo.toml file contained in the root folder of optimal_reps. In that file, you can find a line that looks like 
+`exhact = {path="C:\\Users\\26389\\github\\exhact_project\\exhact_rust"}`. Change the content inside the curly brackets to the absolute path of the father folder of all the code of https://github.com/UDATG/exhact_rust/tree/devel_haibin_comments. This folder should be contained inside the folder that you just unzipped. Notice that for Windows user, you need to use `\\` when writing the absolute path. 
+
+
+## Install Gurobi
+
+Gurobi provides us with a powerful optimizer and it's free for individual academic users. We will go through the process of installing it for academic users (with an academic email). For non-academic user or agency, you can refer to instructions on https://www.gurobi.com/ about how to install it. 
+
+
+### Windows
+
+Go to https://www.gurobi.com/account/. Create an account using your academic email. Login using the account you just created. Then, go to https://www.gurobi.com/academia/academic-program-and-licenses/ and follow the instructions for inividual academic license. By following the instruction, you will download the installer of gurobi optimizer, install the gurobi optimizer using the installer and install an individual academic license on your computer. 
+
+Now, you need to add both the gurobi optimizer and the license to the environment variable of Windows so that it can be used in the rust program. To do that, you can enter "edit system environment variables" to the search bar on the bottom left of the Windows desktop. A small window will pop up and you need to click on the button "environment variables". Now, you need to create two new system environment variables. One should be called "GUROBI_HOME" and its value should be the absolute path where you installed gurobi, e.g. `C:\gurobi912\win64`. The other should be called "GRB_LICENSE_FILE" and its value should be the absolute path where you installed the gurobi license, e.g. `c:\gurobi912\gurobi.lic`. 
 
 
 ### Mac
@@ -59,6 +82,7 @@ https://github.com/coin-or/Cbc
       
 * The set_objective function in Gurobi doesn't seem to work. However, the function can compile without this line.
 
+<!--- 
 ## Examples of homology computations
 
 * There are example files in `src/bin`
@@ -172,4 +196,5 @@ tri_opt(false, 1, |x| 1., &factored_complex, birth, death);
 ### LP +  weight by area
 tri_opt(false, 1, |x| getArea(x, &dismat), &factored_complex, birth, death);
 
+--->
 
