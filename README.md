@@ -3,10 +3,7 @@
 This is a rust library for computing optimal cycle representatives.
 
 ## User guide
-
-A user guide can be found at 
-
-`https://colab.research.google.com/drive/1B-5bI4N168__TsaTGXESgh4p_K7g90Af#scrollTo=TyTh4kFSp61g`
+To use this github repository, you need to install many dependencies first. Below we give some instructions on how to install all the needed dependencies.
 
 ## Installing CBC
 `brew tap coin-or-tools/coinorbrew`
