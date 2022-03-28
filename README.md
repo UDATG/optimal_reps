@@ -3,7 +3,7 @@
 This is a rust library for computing optimal cycle representatives using a linear solver called Gurobi.
 
 # User guide
-To use this github repository, you first need to download the code to your computer. You can do that by clicking on the green "code" button and choose "Download ZIP". Unzip the downloaded zip file. Then, you need to install many dependencies. Below we give some instructions on how to install all the needed dependencies.
+To use this github repository, you first need to download the code to your computer. You can do that by clicking on the green "code" button and choose "Download ZIP". Unzip the downloaded zip file. Then, you need to install three dependencies: Rust, Exhact and Gurobi. Below we give some instructions on how to install these dependencies.
 
 <!--- 
 ## Installing CBC
@@ -81,6 +81,11 @@ Now, you need to add both the gurobi optimizer and the license to the environmen
       https://support.shotgunsoftware.com/hc/en-us/articles/219042108-Setting-global-environment-variables-on-OS-X
       
 * The set_objective function in Gurobi doesn't seem to work. However, the function can compile without this line.
+
+## Get a simplex barcode 
+
+## Get an optimized cycle representative
+
 
 <!--- 
 ## Examples of homology computations
