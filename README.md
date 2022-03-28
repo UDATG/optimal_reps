@@ -1,6 +1,6 @@
 # Optimal cycle representatives
 
-This is a rust library for computing optimal cycle representatives using a linear solver called Gurobi.
+This is a rust library for computing optimal cycle representatives using an optimizer called Gurobi.
 
 # User guide
 To use this github repository, you first need to download the code to your computer. You can do that by clicking on the green "code" button and choose "Download ZIP". Unzip the downloaded zip file. Then, you need to install three dependencies: Rust, Exhact and Gurobi. Below we give some instructions on how to install these dependencies.
