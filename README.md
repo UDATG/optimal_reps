@@ -5,12 +5,14 @@ This is a rust library for computing optimal cycle representatives.
 ## User guide
 To use this github repository, you need to install many dependencies first. Below we give some instructions on how to install all the needed dependencies.
 
+<!--- 
 ## Installing CBC
 `brew tap coin-or-tools/coinorbrew`
 
 `install coin-or-tools/coinor/cbc`
 
 https://github.com/coin-or/Cbc
+--->
 
 ## Installing Gurobi
 
