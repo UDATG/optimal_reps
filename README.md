@@ -82,7 +82,7 @@ Now, you need to add both the gurobi optimizer and the license to the environmen
       
 * The set_objective function in Gurobi doesn't seem to work. However, the function can compile without this line.
 
-## Get a persistance barcode 
+## Get a persistence barcode 
 
 You can get a persistence barcode of a given point cloud or a distance matrix by running "simplex_bar_record.rs" under the src/bin folder of this repository. 
 
