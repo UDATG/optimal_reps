@@ -1,6 +1,6 @@
 # Optimal cycle representatives
 
-This is a rust library for computing optimal cycle representatives using an optimizer called Gurobi.
+This is a rust library for computing optimal cycle representatives using an optimizer called Gurobi. To visualize the result produced by this repository, you may use another repository that we built: https://github.com/qzhang1229/optimal_reps_visualization.
 
 # User guide
 To use this github repository, you first need to download the code to your computer. You can do that by clicking on the green "code" button and choose "Download ZIP". Unzip the downloaded zip file. Then, you need to install three dependencies: Rust, Exhact and Gurobi. Below we give some instructions on how to install these dependencies.
@@ -82,9 +82,31 @@ Now, you need to add both the gurobi optimizer and the license to the environmen
       
 * The set_objective function in Gurobi doesn't seem to work. However, the function can compile without this line.
 
-## Get a simplex barcode 
+## Get a persistance barcode 
+
+You can get a persistence barcode of a given point cloud or a distance matrix by running "simplex_bar_record.rs" under the src/bin folder of this repository. 
+
+Step one: 
+
+To run the code, you first need to open the file "simplex_bar_record.rs" in a text editor, such as VS code. Then, the first line of the main function should be something like `let mut f = BufReader::new(File::open("data_text\\gamma-4-dis_mat.txt").unwrap());`. Here, you'll need to change the file path to the path of the file that you'd like to open. Notice that we only support distance matrix as a valid input. Therefore, if what you have is a point cloud, you can use our code in another github repository (https://github.com/qzhang1229/optimal_reps_visualization) to help you convert a point cloud to a distance matrix. 
+
+Step two:
+
+Next, open a terminal, navigate to the location where this repository is saved on your computer and use the command `cargo run --bin simplex_bar_record`. The terminal will ask you for the dimension of the persistence homology. After you give an input and hit enter, it will compute the result and save it into two npy files under the folder called "simplex_bar". One of them will be "birth_time.npy" and the other will be "death_time.npy". As their names imply, they store the birth time and death time data of all the features of the given distance matrix in the given dimension. To visualize the result, you can use our code in https://github.com/qzhang1229/optimal_reps_visualization.  
 
 ## Get an optimized cycle representative
+
+To get an optimized cycle representative, you can run our code "wrapper_gurobi.rs" under the src/bin folder of this repository. 
+
+Step one:
+
+It is similar to the step to get a persistence barcode. You need to open "wrapper.rs" in a text editor and change the first line of the main function so that it can open the file of your distance matrix. Also, you'll need to change line 199, which is something like `let folder_path = format!("{}{}{}{}", "/Users/26389/github/optimal_reps/",folder_name_input,"_", j);`Here, you need to change the second parameter of the "format!" function to the path where you store the "optimal_reps" repository on your computer. 
+
+Step two:
+
+Next, open a terminal, navigate to the location where this repository is saved on your computer and use the command `cargo run --bin wrapper_gurobi`. The terminal will ask you a list of questions. First, you need to set the dimension of the persistence homology. Then, it will ask "are you going to use the edge loss method? (y/n)". If you say no, it will choose the triangle loss method. Next, it will ask whether the coefficients need to be integers and whether the weight mehod is uniform. Then, it will ask you to give a name to the folder that will store the final result. Finally, it will ask you to input the index of the cycle that you'd like to optimize. (The index can be inferred from the visualization of the barcode in https://github.com/qzhang1229/optimal_reps_visualization.) Then, the result will be saved in the folder that you just gave name to. There are two npy files. One stores the coefficients of the result and the other stores the vertices. To visualize the vertices, you can use our code in https://github.com/qzhang1229/optimal_reps_visualization.
+
+
 
 
 <!--- 
