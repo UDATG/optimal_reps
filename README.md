@@ -8,11 +8,14 @@ In order to show you how our program work to generate simplex barcode and optimi
 
 ## Convert point cloud to distance matrix
 
-The point cloud we use in this example is called 2x100-Gamma-4.csv.txt. It's under the folder data_text/point_cloud. The first step is to convert this point cloud to a distance matrix because the rust program can only accept a distance matrix as a valid input. To do this step, you can use a python program called point_cloud_to_distance_matrix.py in https://github.com/qzhang1229/optimal_reps_visualization. For more instructions about using this file, you can read the readme file of https://github.com/qzhang1229/optimal_reps_visualization.
+The point cloud we use in this example is called 2x100-Gamma-4.csv.txt. It's under the folder data_text/point_cloud. The first step is to convert this point cloud to a distance matrix because the rust program can only accept a distance matrix as a valid input. To do this step, you can use a python program called point_cloud_to_distance_matrix.py in https://github.com/qzhang1229/optimal_reps_visualization. For more instructions about using this file, you can read the readme file of https://github.com/qzhang1229/optimal_reps_visualization. After running the program, a distance matrix will be recorded in a txt file. In this example, the file is named as gamma-4-dis_mat.txt and put under the folder data_text. 
 
 ## Get the simplex barcode
 
-To get a simplex barcode, we need to run the file simplex_bar_record.rs. To run the file, use the command `cargo run --bin simplex_bar_record` in a terminal. 
+To get a simplex barcode, we need to run the file simplex_bar_record.rs. Before running the file, you might need to change the first line of the main function so that it could open the correct file. In this example, the first line of the main function should be `let mut f = BufReader::new(File::open("data_text\\gamma-4-dis_mat.txt").unwrap());`. To run the file, use the command `cargo run --bin simplex_bar_record` in a terminal. The terminal will ask you for the dimension of the persistent homology. Then, the result is saved into two npy files under the folder simplex_bar of this repository. To visualize the result, you can use the python file simplex_barcode_visualization.py in https://github.com/qzhang1229/optimal_reps_visualization. For more instructions, refer to the readme file of that repository. In our example, the simplex barcode for dimension 1 persistent homology should look like this: 
+
+![Barcode](example_images/Figure_1.png)
+
 
 
 # User guide
