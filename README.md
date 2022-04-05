@@ -2,6 +2,19 @@
 
 This is a rust library for computing optimal cycle representatives using an optimizer called Gurobi. To visualize the result produced by this repository, you may use another repository that we built: https://github.com/qzhang1229/optimal_reps_visualization.
 
+# Example 
+
+In order to show you how our program work to generate simplex barcode and optimize cycle representatives, I will run an example. You may follow a similar pipeline to optimize cycles in your own data set. 
+
+## Convert point cloud to distance matrix
+
+The point cloud we use in this example is called 2x100-Gamma-4.csv.txt. It's under the folder data_text/point_cloud. The first step is to convert this point cloud to a distance matrix because the rust program can only accept a distance matrix as a valid input. To do this step, you can use a python program called point_cloud_to_distance_matrix.py in https://github.com/qzhang1229/optimal_reps_visualization. For more instructions about using this file, you can read the readme file of https://github.com/qzhang1229/optimal_reps_visualization.
+
+## Get the simplex barcode
+
+To get a simplex barcode, we need to run the file simplex_bar_record.rs. To run the file, use the command `cargo run --bin simplex_bar_record` in a terminal. 
+
+
 # User guide
 To use this github repository, you first need to download the code to your computer. You can do that by clicking on the green "code" button and choose "Download ZIP". Unzip the downloaded zip file. Then, you need to install three dependencies: Rust, Exhact and Gurobi. Below we give some instructions on how to install these dependencies.
 
@@ -20,7 +33,9 @@ https://github.com/coin-or/Cbc
 
 Go to https://www.rust-lang.org/learn/get-started. Download the correct version of the installer for your computer. Run the installer and follow the onscreen instructions. You may need to install the Visual Studio C++ Build tools when prompted to do so.
 
-### Mac (need help)
+### Mac 
+
+Open the terminal and run the following command: `curl –proto ‘=https’ –tlsv1.2 -sSf https://sh.rustup.rs | sh`. After running the command, you need to follow the prompts in the terminal to finish the installing process. 
 
 ## Install Exhact
 
@@ -41,6 +56,8 @@ Now, you need to add both the gurobi optimizer and the license to the environmen
 
 
 ### Mac
+
+To install Gurobi on a Mac, you generally follow the same procedure as to install it on a Windows. You need to download the gurobi optimizer and the license by following instructions at https://www.gurobi.com/academia/academic-program-and-licenses/. After you download and install these two things, you need to add them to the system environment variables of your computer. Below are some instructions for you to do that:
 
 * make sure you do not move the gurobi license file from the place it's first saved to
 * you'll need to set some "environmental variables"
