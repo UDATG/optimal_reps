@@ -24,21 +24,21 @@ use num::integer::Integer;
 type Coefficient = Ratio<i16>;
 use ordered_float::OrderedFloat;
 
-fn ordered_floats( v : Vec<f64> ) -> Vec< OrderedFloat<f64> > {
+pub fn ordered_floats( v : Vec<f64> ) -> Vec< OrderedFloat<f64> > {
     let u : Vec<_> = v.into_iter().map(OrderedFloat).collect(); 
     return u
 }
 
-fn ordered_floats_nested(v: Vec<Vec<f64>>) -> Vec< Vec< OrderedFloat<f64> > > {
+pub fn ordered_floats_nested(v: Vec<Vec<f64>>) -> Vec< Vec< OrderedFloat<f64> > > {
     return v.into_iter().map( ordered_floats ).collect();
 }
 
-fn getLength( simp: &Simplex<OrderedFloat<f64>>, dismat: &Vec<Vec<OrderedFloat<f64>>> ) -> f64 {
+pub fn getLength( simp: &Simplex<OrderedFloat<f64>>, dismat: &Vec<Vec<OrderedFloat<f64>>> ) -> f64 {
     let a = f64::from(dismat[simp.vertices[0] as usize][simp.vertices[1] as usize]);
     return a;
   }
 
-fn has_fifth_vertex( simp: &Simplex<OrderedFloat<f64>> ) -> f64 {
+pub fn has_fifth_vertex( simp: &Simplex<OrderedFloat<f64>> ) -> f64 {
     let mut weight = 2.0;
     let constant : u16 = 4;
     for vertex in simp.vertices.iter(){
@@ -52,7 +52,7 @@ fn has_fifth_vertex( simp: &Simplex<OrderedFloat<f64>> ) -> f64 {
 }
 
 
-fn edge_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>(
+pub fn edge_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>(
     factored_complex: &FactoredComplexBlockCsm<'a, MatrixIndexKey, Coefficient, Filtration, OriginalChx>,
     birth: &MatrixIndexKey, 
     death: &MatrixIndexKey, 
@@ -168,6 +168,7 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
         let  name = format!("{}{}", "x_pos", i);
 
         let  str_name = &name[..];
+        // Should put weight in objective function because we don't want weight in constraint
         x_pos.push(model.add_var(str_name, program_type,1.0, 0.0, INFINITY, &[], &[]).unwrap());
     }
 
@@ -179,7 +180,7 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
         let  name = format!("{}{}", "x_neg", i);
 
         let  str_name = &name[..];
-        x_neg.push(model.add_var(str_name, program_type, 1.0 , 0.0, INFINITY, &[], &[]).unwrap());
+        x_neg.push(model.add_var(str_name, program_type, 1.0, 0.0, INFINITY, &[], &[]).unwrap());
     }
 
     // initialize the vector: p 
@@ -190,7 +191,7 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
         let  name = format!("{}{}", "p", i);
 
         let  str_name = &name[..];
-        p.push(model.add_var(str_name, program_type, 0.0, 0.0, INFINITY, &[], &[]).unwrap());
+        p.push(model.add_var(str_name, program_type, 0.0, -INFINITY, INFINITY, &[], &[]).unwrap());
     }
 
     // initialize the vector: q
@@ -201,7 +202,7 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
         let  name = format!("{}{}", "q", i);
 
         let  str_name = &name[..];
-        q.push(model.add_var(str_name, program_type, 0.0, 0.0, INFINITY, &[], &[]).unwrap());
+        q.push(model.add_var(str_name, program_type, 0.0, -INFINITY, INFINITY, &[], &[]).unwrap());
     }
 
     // Set objective function
@@ -245,7 +246,7 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
     let D =  chx.get_smoracle(exhact::matrix::MajorDimension::Row, exhact::chx::ChxTransformKind::Boundary);
 
     // println!("good edges : {:?}",good_edges.clone());
-    println!("good triangles : {:?}",good_triangles.clone());
+    // println!("good triangles : {:?}",good_triangles.clone());
     
     // Set constraint
     for edge in good_edges.iter(){
@@ -311,96 +312,6 @@ where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matri
 
 
 fn main() {  
-    let mut f = BufReader::new(File::open("data_text\\debug_example_2.txt").unwrap());
-    let mut s = String::new();
-
-     // for the input as Vec-of-Vec square symmetric matrix
-     let arr: Vec<Vec<f64>> = f.lines()
-     .map(|l| l.unwrap().split(char::is_whitespace)
-          .map(|number| number.parse().unwrap())
-          .collect())
-     .collect();
-   
-
-    let dismat = ordered_floats_nested(arr);
     
-    // set the max dimension to compute persistent homology
-    let dim = 1;
-
-    // set the maximum dissimilarity threshold
-    const maxdis: OrderedFloat<f64> = OrderedFloat(4.);
-
-    // create a "ring object" representing the field of rational numbers
-    let ringmetadata = exhact::matrix::RingMetadata{
-    ringspec: RingSpec::Rational,
-    identity_additive: Ratio::new(0, 1),
-    identity_multiplicative: Ratio::new(1, 1)
-    };
-
-    
-    // build and factor the filtered chain complex
-    let chx = exhact::clique::CliqueComplex {
-        // the distance/dissimilarity matrix
-        dissimilarity_matrix: dismat.clone(), 
-        // threshold to stop the filtration
-        dissimilarity_value_max: maxdis, 
-        // sets "safeguards" on dimension; we'll get warnings if we try to 
-        // get boundary matrices in dimension higher than dim+1
-        safe_homology_degrees_to_build_boundaries: (1..dim+1).collect(), 
-        // set the default major dimension (for sparse matrices) to be row
-        major_dimension: MajorDimension::Row, 
-        // indicates we want Z/3Z coefficients
-        ringmetadata: ringmetadata, 
-        // don't worry about this
-        simplex_count: Vec::new() 
-    };
-    
-    let factored_complex = exhact::chx::factor_chain_complex(&chx, dim+1);
-
-    
-
-    // obtain a list of (birth_edge, death_triangle) pairs for the nonzero bars 
-    let simplex_bar = simplex_barcode( &factored_complex, 1 );
-    
-    println!("lrngth:{:?}",simplex_bar.len());
-    for j in 0..simplex_bar.len(){
-        let birth = &simplex_bar[j].0;
-        let death = &simplex_bar[j].1;
-        // println!("birth: {:?} death: {:?}",birth,death);
-        // Write solution to npy
-    
-        let solution_hash_edge = edge_opt(&factored_complex, birth,death, 1,false, |x| getLength(x, &dismat));
-        let mut vertices_sol_vec = Vec::new();
-        let mut coeff_sol_vec = Vec::new();
-        // println!("weight {:?}",solution_hash_edge);
-
-        for (print_key, print_val) in solution_hash_edge.iter() {
-            vertices_sol_vec.push(print_key.vertices[0]);
-            vertices_sol_vec.push(print_key.vertices[1]);
-            coeff_sol_vec.push(*print_val);
-        }
-        let vertices_sol_arr = Array::from_vec(vertices_sol_vec);
-        let coeff_sol_arr = Array::from_vec(coeff_sol_vec);
-        let folder_name = format!("{}{}", "npy_files_dis_mat_cycle_", j);  
-        write_npy(folder_name.clone() + "/weighted_edge_answer_vertices.npy", &vertices_sol_arr);
-        write_npy(folder_name.clone() + "/weighted_edge_answer_coeffs.npy", &coeff_sol_arr);
-        println!("{}",folder_name);
-        // // Write original basis to npy
-    //     let x_orig = factored_complex.get_matched_basis_vector(1, &birth);
-    //     println!("orig {:?}",x_orig);
-    //     let mut vertices_orig_vec = Vec::new();
-    //     let mut coeff_orig_vec: std::vec::Vec::<f64> = Vec::new();
-
-    //     for (print_key, print_val) in x_orig.iter() {
-    //         vertices_orig_vec.push(print_key.vertices[0]);
-    //         vertices_orig_vec.push(print_key.vertices[1]);
-    //         coeff_orig_vec.push((print_val.numer()/print_val.denom()).into());
-    //     }
-    //     let vertices_orig_arr = Array::from_vec(vertices_orig_vec);
-    //     let coeff_orig_arr = Array::from_vec(coeff_orig_vec);
-
-    //     write_npy("npy_files_dis_mat_cycle_2/orig_vertices.npy", &vertices_orig_arr);
-    //     write_npy("npy_files_dis_mat_cycle_2/orig_coeffs.npy", &coeff_orig_arr);
-    }
 }
 
