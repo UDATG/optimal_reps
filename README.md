@@ -1,5 +1,12 @@
-# optimal_reps
-Optimal cycle representatives
+# Optimal cycle representatives
+
+This is a rust library for computing optimal cycle representatives.
+
+## User guide
+
+A user guide can be found at 
+
+`https://colab.research.google.com/drive/1B-5bI4N168__TsaTGXESgh4p_K7g90Af#scrollTo=TyTh4kFSp61g`
 
 ## Installing CBC
 `brew tap coin-or-tools/coinorbrew`
