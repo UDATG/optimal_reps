@@ -112,7 +112,7 @@ Next, open a terminal, navigate to the location where this repository is saved o
 
 # Example 
 
-In order to show you how our program work to generate simplex barcode and optimize cycle representatives, I will run an example. You may follow a similar pipeline to optimize cycles in your own data set. 
+In order to show you how our program work to generate simplex barcode and optimize cycle representatives, we will run an example. You may follow a similar pipeline to optimize cycles in your own data set. 
 
 ## Convert point cloud to distance matrix
 
