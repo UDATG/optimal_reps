@@ -116,7 +116,7 @@ In order to show you how our program work to generate simplex barcode and optimi
 
 ## Convert point cloud to distance matrix
 
-The point cloud we use in this example is called [2x100-Gamma-4.csv.txt] (data_text/point_cloud_2x100-Gamma-4.csv.txt). The first step is to convert this point cloud to a distance matrix because the rust program can only accept a distance matrix as a valid input. To do this step, you can use a python program called point_cloud_to_distance_matrix.py in https://github.com/qzhang1229/optimal_reps_visualization. For more instructions about using this file, you can read the readme file of https://github.com/qzhang1229/optimal_reps_visualization. After running the program, a distance matrix will be recorded in a txt file. In this example, the file is named as gamma-4-dis_mat.txt and put under the folder data_text. 
+The point cloud we use in this example is called [2x100-Gamma-4.csv.txt](data_text/point_cloud_2x100-Gamma-4.csv.txt). The first step is to convert this point cloud to a distance matrix because the rust program can only accept a distance matrix as a valid input. To do this step, you can use a python program called point_cloud_to_distance_matrix.py in https://github.com/qzhang1229/optimal_reps_visualization. For more instructions about using this file, you can read the readme file of https://github.com/qzhang1229/optimal_reps_visualization. After running the program, a distance matrix will be recorded in a txt file. In this example, the file is named as gamma-4-dis_mat.txt and put under the folder data_text. 
 
 ## Get the simplex barcode
 
