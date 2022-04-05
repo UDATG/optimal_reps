@@ -31,7 +31,7 @@ type Coefficient = Ratio<i16>;
 
 
 fn main() {    
-    let mut f = BufReader::new(File::open("data_text/3_d_dis_mat.txt").unwrap());
+    let mut f = BufReader::new(File::open("data_text/gamma-4-dis_mat.txt").unwrap());
     let mut s = String::new();
 
      // for the input as Vec-of-Vec square symmetric matrix
