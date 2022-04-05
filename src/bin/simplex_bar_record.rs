@@ -28,7 +28,7 @@ fn ordered_floats_nested(v: Vec<Vec<f64>>) -> Vec< Vec< OrderedFloat<f64> > > {
     return v.into_iter().map( ordered_floats ).collect();
 }
 fn main() {  
-    let mut f = BufReader::new(File::open("data_text\\3_d_dis_mat.txt").unwrap());
+    let mut f = BufReader::new(File::open("data_text\\gamma-4-dis_mat.txt").unwrap());
     let mut s = String::new();
 
      // for the input as Vec-of-Vec square symmetric matrix
@@ -106,6 +106,6 @@ fn main() {
     let death_arr = Array::from_vec(death_vec);
     
 
-    write_npy("simplex_bar/3_d_1_birth_time.npy", &birth_arr);
-    write_npy("simplex_bar/3_d_1_death_time.npy", &death_arr);
+    write_npy("simplex_bar/birth_time.npy", &birth_arr);
+    write_npy("simplex_bar/death_time.npy", &death_arr);
 }
