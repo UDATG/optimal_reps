@@ -4,6 +4,8 @@ use exhact::chx::{ChainComplex, factor_chain_complex, ChxTransformKind,FactoredC
 use exhact::clique::Simplex;
 use num::rational::Ratio;
 use std;
+use std::path::Path;
+use std::fs;
 extern crate gurobi;
 use gurobi::*;
 use sprs::{CsMat, CsVec};
@@ -23,21 +25,21 @@ use ordered_float::OrderedFloat;
 
 type Coefficient = Ratio<i16>;
 
-fn ordered_floats( v : Vec<f64> ) -> Vec< OrderedFloat<f64> > {
+pub fn ordered_floats( v : Vec<f64> ) -> Vec< OrderedFloat<f64> > {
     let u : Vec<_> = v.into_iter().map(OrderedFloat).collect(); 
     return u
 }
 
-fn ordered_floats_nested(v: Vec<Vec<f64>>) -> Vec< Vec< OrderedFloat<f64> > > {
+pub fn ordered_floats_nested(v: Vec<Vec<f64>>) -> Vec< Vec< OrderedFloat<f64> > > {
     return v.into_iter().map( ordered_floats ).collect();
 }
 
-fn rational_to_float(r: Ratio<i16>)->f64{
+pub fn rational_to_float(r: Ratio<i16>)->f64{
     return r.numer().clone() as f64/r.denom().clone() as f64;
 }
 
 
-fn getArea( simp: &Simplex<OrderedFloat<f64>>, dismat: &Vec<Vec<OrderedFloat<f64>>> ) -> f64 {
+pub fn getArea( simp: &Simplex<OrderedFloat<f64>>, dismat: &Vec<Vec<OrderedFloat<f64>>> ) -> f64 {
 
     
    let a = f64::from(dismat[simp.vertices[0] as usize][simp.vertices[1] as usize]);
@@ -51,21 +53,23 @@ fn getArea( simp: &Simplex<OrderedFloat<f64>>, dismat: &Vec<Vec<OrderedFloat<f64
    return t.sqrt();
  }
 
-fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
+pub fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
 (   factored_complex: &FactoredComplexBlockCsm<'a, MatrixIndexKey, Coefficient, Filtration, OriginalChx>,
     birth: &MatrixIndexKey, 
     death: &MatrixIndexKey,
     dim: usize, 
     is_int: bool, 
     is_pos: bool,
-    weight: WeightFunction )
+    weight: WeightFunction,
+    prev_obj_val: f64
+)
     
-    -> HashMap<MatrixIndexKey, f64> 
+    -> (HashMap<MatrixIndexKey, f64> , f64)
     where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matrix=Matrix>,
             MatrixIndexKey: PartialEq+ Eq + Clone + Hash + std::cmp::PartialOrd + Ord + std::fmt::Debug,
             Matrix: SmOracle<MatrixIndexKey, MatrixIndexKey, Coefficient>,
             Filtration: PartialOrd + Clone,
-            WeightFunction: Fn( &MatrixIndexKey ) -> f64{
+            WeightFunction: Fn( &MatrixIndexKey ) -> f64 {
     
         let chx = &factored_complex.original_complex;
         let i = dim;
@@ -80,8 +84,6 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
         
         
         // count the size of good triangles
-        // println!("good triangle:{:?}",good_triangles);
-
         let size = good_triangles.len();
         
         
@@ -94,12 +96,11 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
         let mut good_edges: Vec<_> = chx.keys_unordered_itr(i).filter(|s| chx.key_2_filtration(&s) <= chx.key_2_filtration(&death) && &s > &birth).collect();
         
         let mut death_iter = D.min_itr(&death);
-        for death_edge in death_iter{
-            println!("death edge:{:?}", death_edge);
-            println!("death edge in good edge :{:?}", good_edges.contains(&death_edge.0));
-        }
+        // for death_edge in death_iter{
+        //     println!("death edge:{:?}", death_edge);
+        //     println!("death edge in good edge :{:?}", good_edges.contains(&death_edge.0));
+        // }
 
-        // println!("good edges:{:?}", good_edges);
         // Set program type
         let mut program_type = Integer;
         if (is_int){
@@ -175,7 +176,6 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
             // Check whether the item is in the set of good triangels, which corresponds to F_{n+1}_hat in the paper
             // This differs from F_{n+1} by addong the death simplex
 
-            // if (chx.key_2_filtration(&item.0) >= chx.key_2_filtration(&birth) && &item.0 < &death){
             if (&item.0 <= &death){
                 let mut index: usize = triangle_2_index.get(&item.0).unwrap().clone();
                 // set coefficients
@@ -198,7 +198,6 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
         //Set up the second kind of constraint
         // D_{n+1}[F_n,\hat{F}_{n+1}] v == 0 
         for edge in good_edges{
-            //println!("{:?} good_edges", edge.clone());
             
             let mut row_ctr2 = D.maj_itr(&edge);
             let mut constraint2 = LinExpr::new();
@@ -213,9 +212,6 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
                     constraint2 = constraint2.add_term((-item.1.numer()/item.1.denom()).into(), v_neg[index].clone());
                 }
             }
-            // if (edge. == 1 && edge.vertices[1] == 67){
-            //     println!("wrong constraint {:?}",constraint2);
-            // }
             model.add_constr("constraint2", constraint2.clone(), Equal, 0.0);
             model.update().unwrap();
         }
@@ -239,6 +235,17 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
         model.write("logfile_tri_loss_new.lp").unwrap();
         model.optimize().unwrap();
         
+        let model_status = model.status().unwrap();
+        if !matches!(&model_status, gurobi::Status::Optimal){
+            return (HashMap::new(),INFINITY);
+        }
+
+        let obj_val = model.get(attr::ObjVal).unwrap();
+        if obj_val > prev_obj_val{
+            return (HashMap::new(),obj_val);
+        }
+       
+
         let v_neg_val = model.get_values(attr::X, &v_neg).unwrap(); // Get the result for x+ and x-
         let v_pos_val = model.get_values(attr::X, &v_pos).unwrap();
 
@@ -265,9 +272,9 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
                     solution_hash_triangle.insert(index_2_triangle.get(&i).unwrap().clone(), sol_value);
                 }
             }
-            println!("tri ans length : {:?}",solution_hash_triangle.len());
+            
             let top_tri = solution_hash_triangle.keys().max().clone();
-            println!("top tri:{:?}",top_tri);
+            
             // build solution_hash_edge
             for (tri_key, tri_val) in solution_hash_triangle {
                 for ( edge_key, edge_val) in D.min_itr(& tri_key ) {
@@ -327,102 +334,12 @@ fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFunction>
         //     }
 
         // }
-        return solution_hash_edge;
+        return (solution_hash_edge,obj_val);
 
 
         
 }
 
 fn main() {    
-    // read distance matrix
-    let mut f = BufReader::new(File::open("data_text\\dist_mat.txt").unwrap());
-    let mut s = String::new();
-
-     // for the input as Vec-of-Vec square symmetric matrix
-     let arr: Vec<Vec<f64>> = f.lines()
-     .map(|l| l.unwrap().split(char::is_whitespace)
-          .map(|number| number.parse().unwrap())
-          .collect())
-     .collect();
-    let dismat = ordered_floats_nested(arr);
     
-    
-    // set the max dimension to compute persistent homology
-    let dim = 1;
-
-    // set the maximum dissimilarity threshold
-    const maxdis: OrderedFloat<f64> = OrderedFloat(4.);
-
-    // create a "ring object" representing the field of rational numbers
-    let ringmetadata = exhact::matrix::RingMetadata{
-    ringspec: RingSpec::Rational,
-    identity_additive: Ratio::new(0, 1),
-    identity_multiplicative: Ratio::new(1, 1)
-    };
-
-    // build and factor the filtered chain complex
-    let chx = exhact::clique::CliqueComplex {
-        // the distance/dissimilarity matrix
-        dissimilarity_matrix: dismat.clone(), 
-        // threshold to stop the filtration
-        dissimilarity_value_max: maxdis, 
-        // sets "safeguards" on dimension; we'll get warnings if we try to 
-        // get boundary matrices in dimension higher than dim+1
-        safe_homology_degrees_to_build_boundaries: (1..dim+1).collect(), 
-        // set the default major dimension (for sparse matrices) to be row
-        major_dimension: MajorDimension::Row, 
-        // indicates we want Z/3Z coefficients
-        ringmetadata: ringmetadata, 
-        // don't worry about this
-        simplex_count: Vec::new() 
-    };
-    let factored_complex = exhact::chx::factor_chain_complex(&chx, dim+1);
-    
-    // obtain a list of (birth_edge, death_triangle) pairs for the nonzero bars 
-    let simplex_bar = simplex_barcode( &factored_complex, 1 );
-    
-    for j in 0..simplex_bar.len(){
-        let birth = &simplex_bar[j].0;
-        let death = &simplex_bar[j].1;
-        // println!("birth: {:?} death: {:?}",birth,death);
-        // Write solution to npy
-        
-        let solution_hash_tri = tri_opt(&factored_complex, birth,death, 1,false,true, |x| getArea(&x, &dismat));
-        
-
-        let mut vertices_sol_vec = Vec::new();
-        let mut coeff_sol_vec = Vec::new();
-        // println!("weight {:?}",solution_hash_tri);
-
-        for (print_key, print_val) in solution_hash_tri.iter() {
-            vertices_sol_vec.push(print_key.vertices[0]);
-            vertices_sol_vec.push(print_key.vertices[1]);
-            coeff_sol_vec.push(*print_val);
-        }
-
-        let vertices_sol_arr = Array::from_vec(vertices_sol_vec);
-        let coeff_sol_arr = Array::from_vec(coeff_sol_vec);
-        let folder_name = format!("{}{}", "npy_files_dis_mat_cycle_tri", j);  
-        write_npy(folder_name.clone() + "/weighted_edge_answer_vertices.npy", &vertices_sol_arr);
-        write_npy(folder_name.clone() + "/weighted_edge_answer_coeffs.npy", &coeff_sol_arr);
-        println!("{}",folder_name);
-
-
-        // // Write original basis to npy
-    //     let x_orig = factored_complex.get_matched_basis_vector(1, &birth);
-    //     println!("orig {:?}",x_orig);
-    //     let mut vertices_orig_vec = Vec::new();
-    //     let mut coeff_orig_vec: std::vec::Vec::<f64> = Vec::new();
-
-    //     for (print_key, print_val) in x_orig.iter() {
-    //         vertices_orig_vec.push(print_key.vertices[0]);
-    //         vertices_orig_vec.push(print_key.vertices[1]);
-    //         coeff_orig_vec.push((print_val.numer()/print_val.denom()).into());
-    //     }
-    //     let vertices_orig_arr = Array::from_vec(vertices_orig_vec);
-    //     let coeff_orig_arr = Array::from_vec(coeff_orig_vec);
-
-    //     write_npy("npy_files_dis_mat_cycle_2/orig_vertices.npy", &vertices_orig_arr);
-    //     write_npy("npy_files_dis_mat_cycle_2/orig_coeffs.npy", &coeff_orig_arr);
-    }
 }
