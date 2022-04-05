@@ -17,6 +17,14 @@ To get a simplex barcode, we need to run the file simplex_bar_record.rs. Before 
 ![Barcode](example_images/Figure_1.png)
 
 
+## Optimize a cycle representative
+
+From the visualization of the barcode, we can find the index of any cycle that we are interested in and plan to optimize. For example, in the barcode above, we could see that the third cycle (with index 2) has the longest lifespan. Therefore, let's try to optimize this cycle and visualize the final result. In order to optimize the cycle, you need to run the file wrapper_gurobi.rs. Before running this file, you might also need to change the first line of the main function of wrapper_gurobi.rs so that it can open the correct file. In this example, it should be `let mut f = BufReader::new(File::open("data_text/gamma-4-dis_mat.txt").unwrap());`. Also, you need to change line 199, a line that looks like `let folder_path = format!("{}{}{}{}", "/Users/26389/github/optimal_reps/",folder_name_input,"_", j);`. Here, change the second parameter of the "format!" function to the path where this repository is saved on your computer.
+
+Now, you can run the file using the command `cargo run --bin wrapper_gurobi`. The terminal will ask you a series of questions to set the necessary parameters. In this example, I tried to optimize the third cycle (with index 2) using triangle method with uniform weight and non-integer coefficients in dimension 1 persistent homology, so I answered all the questions in the terminal accordingly. The result will be stored in a folder that you just gave name to. Then, to visualize the result, you need to copy and paste the folder that contains the result to the [visualization repository](https://github.com/qzhang1229/optimal_reps_visualization). By using the file optimized_cycle_visualization.py, you can see the final result of the optimized cycle. To learn how to use all the visualization python files, read the readme file of  the [visualization repository](https://github.com/qzhang1229/optimal_reps_visualization). In our example, it looks like this:
+
+![Cycle](example_images/Figure_2.png)
+
 
 # User guide
 To use this github repository, you first need to download the code to your computer. You can do that by clicking on the green "code" button and choose "Download ZIP". Unzip the downloaded zip file. Then, you need to install three dependencies: Rust, Exhact and Gurobi. Below we give some instructions on how to install these dependencies.
