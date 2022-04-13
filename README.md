@@ -64,7 +64,7 @@ After that, open a terminal and run
         ```
         source ~/.bash_profile
         ```
-       to refresh your environmental variables with the new addition
+to refresh your environmental variables with the new addition
 Finally, run
     
        ```
