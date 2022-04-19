@@ -28,10 +28,13 @@ use tri_loss_gurobi::*;
 mod edge_loss_gurobi;                
 use edge_loss_gurobi::*;
 type Coefficient = Ratio<i16>;
-
+use std::env;
 
 fn main() {    
-    let mut f = BufReader::new(File::open("data_text/gamma-4-dis_mat.txt").unwrap());
+    let args: Vec<String> = env::args().collect();
+    let filename = &args[1];
+
+    let mut f = BufReader::new(File::open(filename).unwrap());
     let mut s = String::new();
 
      // for the input as Vec-of-Vec square symmetric matrix
@@ -196,7 +199,7 @@ Enter \"all\" if you'd like to optimize all the cycles:");
         let coeff_sol_arr = Array::from_vec(coeff_sol_vec); 
         
         // Create a folder to hold the results
-        let folder_path = format!("{}{}{}{}", "/Users/26389/github/optimal_reps/",folder_name_input,"_", j);
+        let folder_path = format!("{}{}{}{}", "./",folder_name_input,"_", j);
         fs::create_dir(folder_path.clone());
         
         if is_tri{

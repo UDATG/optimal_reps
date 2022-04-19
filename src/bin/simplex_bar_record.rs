@@ -18,6 +18,8 @@ use ndarray_npy::write_npy;
 use num::integer::Integer;
 type Coefficient = Ratio<i16>;
 use ordered_float::OrderedFloat;
+use std::env;
+use std::fs;
 
 fn ordered_floats( v : Vec<f64> ) -> Vec< OrderedFloat<f64> > {
     let u : Vec<_> = v.into_iter().map(OrderedFloat).collect(); 
@@ -28,7 +30,12 @@ fn ordered_floats_nested(v: Vec<Vec<f64>>) -> Vec< Vec< OrderedFloat<f64> > > {
     return v.into_iter().map( ordered_floats ).collect();
 }
 fn main() {  
-    let mut f = BufReader::new(File::open("data_text\\gamma-4-dis_mat.txt").unwrap());
+    let args: Vec<String> = env::args().collect();
+    let filename = &args[1];
+    let birthname = &args[2];
+    let deathname = &args[3];
+
+    let mut f = BufReader::new(File::open(filename).unwrap());
     let mut s = String::new();
 
      // for the input as Vec-of-Vec square symmetric matrix
@@ -38,7 +45,6 @@ fn main() {
           .collect())
      .collect();
    
-
     let dismat = ordered_floats_nested(arr.clone());
     
     // set the max dimension to compute persistent homology
@@ -106,6 +112,6 @@ fn main() {
     let death_arr = Array::from_vec(death_vec);
     
 
-    write_npy("simplex_bar/birth_time.npy", &birth_arr);
-    write_npy("simplex_bar/death_time.npy", &death_arr);
+    write_npy(birthname, &birth_arr);
+    write_npy(deathname, &death_arr);
 }
