@@ -153,24 +153,29 @@ Enter \"all\" if you'd like to optimize all the cycles:");
         // Write solution to npy
         
         let mut solution_hash_map = HashMap::new();
+        let mut tri_num = 0;
         if is_tri{
             let mut prev_obj_value = INFINITY;
             if is_uniform{
                 let result_pos = tri_opt(&factored_complex, birth,death, dim,is_int,true, |x| 1.0,prev_obj_value);
                 solution_hash_map = result_pos.0;
                 prev_obj_value = result_pos.1;
+                tri_num = result_pos.2;
                 let result_neg = tri_opt(&factored_complex, birth,death, dim,is_int,false, |x| 1.0,prev_obj_value);
                 if result_neg.0.len() > 0{
                     solution_hash_map = result_neg.0;
+                    tri_num = result_neg.2;
                 }
             }
             else{
                 let result_pos = tri_opt(&factored_complex, birth,death, dim,is_int,true, |x| getArea(&x, &dismat),prev_obj_value);
                 solution_hash_map = result_pos.0;
                 prev_obj_value = result_pos.1;
+                tri_num = result_pos.2;
                 let result_neg = tri_opt(&factored_complex, birth,death, dim,is_int,false, |x| getArea(&x, &dismat),prev_obj_value);
                 if result_neg.0.len() > 0{
                     solution_hash_map = result_neg.0;
+                    tri_num = result_neg.2;
                 }
             }
         }else{
@@ -182,12 +187,11 @@ Enter \"all\" if you'd like to optimize all the cycles:");
             }
         }
 
-        
-        
-
         let mut vertices_sol_vec = Vec::new();
         let mut coeff_sol_vec = Vec::new();
-        // println!("weight {:?}",solution_hash_tri);
+        let mut tri_num_vec = Vec::new();
+
+        tri_num_vec.push(tri_num);
 
         for (print_key, print_val) in solution_hash_map.iter() {
             vertices_sol_vec.push(print_key.vertices[0]);
@@ -196,20 +200,25 @@ Enter \"all\" if you'd like to optimize all the cycles:");
         }
 
         let vertices_sol_arr = Array::from_vec(vertices_sol_vec);
-        let coeff_sol_arr = Array::from_vec(coeff_sol_vec); 
+        let coeff_sol_arr = Array::from_vec(coeff_sol_vec);
+        let tri_num_arr = Array::from_vec(tri_num_vec);
         
         // Create a folder to hold the results
         let folder_path = format!("{}{}{}{}", "./",folder_name_input,"_", j);
         fs::create_dir(folder_path.clone());
         
+
+
         if is_tri{
             if is_uniform{
                 write_npy(folder_path.clone() + "/uniform_tri_loss_vertices.npy", &vertices_sol_arr);
                 write_npy(folder_path.clone() + "/uniform_tri_loss_coeffs.npy", &coeff_sol_arr);
+                write_npy(folder_path.clone() + "/uniform_tri_loss_tri_num.npy", &tri_num_arr);
             } 
             else{
                 write_npy(folder_path.clone() + "/weighted_tri_loss_vertices.npy", &vertices_sol_arr);
                 write_npy(folder_path.clone() + "/weighted_tri_loss_coeffs.npy", &coeff_sol_arr);
+                write_npy(folder_path.clone() + "/weighted_tri_loss_tri_num.npy", &tri_num_arr);
             }
         }
         else{

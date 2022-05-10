@@ -64,7 +64,7 @@ pub fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFuncti
     prev_obj_val: f64
 )
     
-    -> (HashMap<MatrixIndexKey, f64> , f64)
+    -> (HashMap<MatrixIndexKey, f64> , f64, i32)
     where   OriginalChx: ChainComplex<MatrixIndexKey, Coefficient, Filtration, Matrix=Matrix>,
             MatrixIndexKey: PartialEq+ Eq + Clone + Hash + std::cmp::PartialOrd + Ord + std::fmt::Debug,
             Matrix: SmOracle<MatrixIndexKey, MatrixIndexKey, Coefficient>,
@@ -237,12 +237,12 @@ pub fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFuncti
         
         let model_status = model.status().unwrap();
         if !matches!(&model_status, gurobi::Status::Optimal){
-            return (HashMap::new(),INFINITY);
+            return (HashMap::new(),INFINITY,-1);
         }
 
         let obj_val = model.get(attr::ObjVal).unwrap();
         if obj_val > prev_obj_val{
-            return (HashMap::new(),obj_val);
+            return (HashMap::new(),obj_val,-1);
         }
        
 
@@ -260,6 +260,7 @@ pub fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFuncti
 
     // return ans;
     let mut solution_hash_edge : HashMap<MatrixIndexKey, f64> = HashMap::new();  
+    let mut tri_num = 0;
 
         // if model_pos.get(attr::ObjVal).unwrap()<=model_neg.get(attr::ObjVal).unwrap(){ // if model_pos gives the smaller objective value
             let v_neg_val = model.get_values(attr::X, &v_neg).unwrap();
@@ -270,6 +271,7 @@ pub fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFuncti
                 let sol_value = v_pos_val[i]- v_neg_val[i];
                 if sol_value!=0.{
                     solution_hash_triangle.insert(index_2_triangle.get(&i).unwrap().clone(), sol_value);
+                    tri_num += 1;
                 }
             }
             
@@ -334,7 +336,7 @@ pub fn tri_opt<'a, MatrixIndexKey, Filtration, OriginalChx, Matrix, WeightFuncti
         //     }
 
         // }
-        return (solution_hash_edge,obj_val);
+        return (solution_hash_edge,obj_val,tri_num);
 
 
         
