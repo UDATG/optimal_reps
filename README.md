@@ -117,7 +117,7 @@ From the visualization of the barcode, we can find the index of any cycle that w
 
 The terminal will ask you a series of questions to set the necessary parameters. In this example, I tried to optimize the third cycle (with index 2) using triangle method with uniform weight and non-integer coefficients in dimension 1 persistent homology, so I answered all the questions in the terminal accordingly. The result will be stored in a folder that you just gave name to. Then, to visualize the result, you need to copy and paste the folder that contains the result to the [visualization repository](https://github.com/qzhang1229/optimal_reps_visualization). By using the file optimized_cycle_visualization.py, you can see the final result of the optimized cycle. To learn how to use all the visualization python files, read the readme file of the [visualization repository](https://github.com/qzhang1229/optimal_reps_visualization). In our example, it looks like this:
 
-![Cycle](example_images/Figure_2.png)
+![Cycle](example_images/Figure_3.png)
 
 
 <!--- 
