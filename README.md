@@ -1,11 +1,11 @@
 # Optimal cycle representatives
 
-This is a rust library for computing optimal cycle representatives using an optimizer called Gurobi. It implements the optimization algorithm described by [this paper](https://arxiv.org/pdf/2105.07025.pdf). In general, to optimize a cycle representative in a persistent homology, there are three parameters we need to decide. First, we need to choose between an edge-loss method and a triangle-loss method. These two methods and their differences are discussed in the paper. Second, we need to choose whether the resulting coefficients need to be integers or not. Third, we need to choose the weight method for the program, whether it's uniform weight or not. Below is a detailed user guide that walks through the process of installing all the necessary softwares. Also, we provide an example that shows us how to run the main programs of this repository. 
+This is a rust library for computing optimal cycle representatives using an optimizer called Gurobi. It implements the optimization algorithm discussed in [this paper](https://arxiv.org/pdf/2105.07025.pdf). In general, to optimize a cycle representative of a particular dimension in persistent homology, there are three parameters we need to decide. First, we need to choose between an edge-loss method and a triangle-loss method. These two methods and their differences are discussed in the paper. Second, we need to choose whether the resulting coefficients need to be integers or not. Third, we need to choose the weight method for the program, whether it is uniformly weighted or another weight is provided. Below is a detailed user guide that walks through the process of installing all the necessary software. Following this, we provide an example that shows us how to run the main programs of this repository. 
 
 To visualize the result produced by this repository, you may use [another repository that we built](https://github.com/qzhang1229/optimal_reps_visualization).
 
 # User guide
-To use this github repository, you first need to download the code to your computer. You can do that by clicking on the green "code" button and choose "Download ZIP". Unzip the downloaded zip file. Then, you need to install three dependencies: Rust, Exhact and Gurobi. Below we give some instructions on how to install these dependencies.
+To use this github repository, you first need to download the code to your computer. You can do so by clicking on the green "code" button and choose "Download ZIP". Unzip the downloaded zip file. Then, you need to install three dependencies: Rust, ExHACT and Gurobi. Below we give some instructions on how to install these dependencies.
 
 <!--- 
 ## Installing CBC
@@ -29,31 +29,31 @@ Open the terminal and run the following command: `curl –proto ‘=https’ –
 ## Install Exhact
 
 Go to https://github.com/UDATG/exhact_rust/tree/devel_haibin_comments. Download the code by clicking on the green "code" button and choose "Download ZIP". Unzip the downloaded zip file. Then, open the Cargo.toml file contained in the root folder of optimal_reps. In that file, you can find a line that looks like 
-`exhact = {path="C:\\Users\\26389\\github\\exhact_project\\exhact_rust"}`. Change the content inside the curly brackets to the absolute path of the father folder of all the code of https://github.com/UDATG/exhact_rust/tree/devel_haibin_comments. This folder should be contained inside the folder that you just unzipped. Notice that for Windows user, you need to use `\\` when writing the absolute path. 
+`exhact = {path="C:\\Users\\26389\\github\\exhact_project\\exhact_rust"}`. Change the content inside the curly brackets to the absolute path of the father folder of all the code of https://github.com/UDATG/exhact_rust/tree/devel_haibin_comments. This folder should be contained inside the folder that you just unzipped. Notice that for Windows users, you need to use `\\` when writing the absolute path. 
 
 
 ## Install Gurobi
 
-Gurobi provides us with a powerful optimizer and it's free for individual academic users. We will go through the process of installing it for academic users (with an academic email). For non-academic user or agency, you can refer to instructions on https://www.gurobi.com/ about how to install it. 
+Gurobi provides us with a powerful optimizer, and it is freely available for individual academic users. We will go through the process of installing it for academic users (with an academic email). For non-academic users or agencies, you can refer to instructions on https://www.gurobi.com/. 
 
 
 ### Windows
 
-Go to https://www.gurobi.com/account/. Create an account using your academic email. Login using the account you just created. Then, go to https://www.gurobi.com/academia/academic-program-and-licenses/ and follow the instructions for inividual academic license. By following the instruction, you will download the installer of gurobi optimizer, install the gurobi optimizer using the installer and install an individual academic license on your computer. 
+Go to https://www.gurobi.com/account/. Create an account using your academic email. Login using the account you just created. Then, go to https://www.gurobi.com/academia/academic-program-and-licenses/ and follow the instructions for inividual academic license. By following the instructions, you will download the installer of gurobi optimizer, install the gurobi optimizer using the installer, and install an individual academic license on your computer. 
 
-Now, you need to add both the gurobi optimizer and the license to the environment variable of Windows so that it can be used in the rust program. To do that, you can enter "edit system environment variables" to the search bar on the bottom left of the Windows desktop. A small window will pop up and you need to click on the button "environment variables". Now, you need to create two new system environment variables. One should be called "GUROBI_HOME" and its value should be the absolute path where you installed gurobi, e.g. `C:\gurobi912\win64`. The other should be called "GRB_LICENSE_FILE" and its value should be the absolute path where you installed the gurobi license, e.g. `c:\gurobi912\gurobi.lic`. 
+Now, you need to add both the gurobi optimizer and the license to the environment variable of Windows so that it can be used in by Rust. To do that, you can enter "edit system environment variables" in the search bar on the bottom left of the Windows desktop. A small window will pop up, and you need to click on the button "environment variables". Now, you need to create two new system environment variables. One should be called "GUROBI_HOME," and its value should be the absolute path where you installed gurobi, e.g. `C:\gurobi912\win64`. The other should be called "GRB_LICENSE_FILE," and its value should be the absolute path where you installed the gurobi license, e.g. `c:\gurobi912\gurobi.lic`. 
 
 
 ### Mac
 
-To install Gurobi on a Mac, you generally follow the same procedure as to install it on a Windows. You need to download the gurobi optimizer and the license by following instructions at https://www.gurobi.com/academia/academic-program-and-licenses/. After you download and install these two things, you need to add them to the system environment variables of your computer. Below are some instructions for you to do that (
-make sure you do not move the gurobi license file from the place it's first saved to):
+To install Gurobi on a Mac, you generally follow the same procedure as to install it on a Windows machine. You need to download the gurobi optimizer and the license by following instructions at https://www.gurobi.com/academia/academic-program-and-licenses/. After you download and install these two things, you need to add them to the system environment variables on your computer. Below are some instructions for you to do that (
+make sure you do not move the gurobi license file from the place it is first saved to):
 We will do this by modifying a `.bash_profile` folder. There are several other files you can modify to update an environmental variable, each with different effects (a few examples of such files include `/.bashrc`, `/etc/profile`, `~/.profile`, `~/.zprofile`)
 <!--- * here are some partially overlapping online resources:
 				* for Mac OS  [here](https://youngstone89.medium.com/setting-up-environment-variables-in-mac-os-28e5941c771c) 
 				* for Mac, Linux, and Windows: [a nice discussion](https://gist.github.com/nex3/c395b2f8fd4b02068be37c961301caa7), 
 				* for `bash`, `zsh`, or `tcsh`  [a nice stack exchange](ttps://unix.stackexchange.com/questions/21598/how-do-i-set-a-user-environment-variable-permanently-not-session)--->
-First, you need to check to see if you have a file `/.bash_profile`. You may have hit "Command + Shift + ." to show hidden files. If you don't already have a `.bash_profile` file, then create one with a code editor like visual studio code, vim, etc.
+First, you need to check to see if you have a file `/.bash_profile`. Type "Command + Shift + ." to show hidden files. If you don't already have a `.bash_profile` file, then create one with a code editor like visual studio code, vim, etc.
 Then, add the following lines to your `.bash_profile` file:
     
         ```
